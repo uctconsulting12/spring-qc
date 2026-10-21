@@ -1,0 +1,6 @@
+# Build-time-only tools. The actual app dependencies come from
+# ..\spring-qc-app\requirements.txt (installed by build.bat) plus a
+# CUDA-enabled torch/torchvision build - see build.bat, same index URL the
+# Docker image uses (https://download.pytorch.org/whl/cu124).
+pyinstaller>=6.10
+pywin32>=306

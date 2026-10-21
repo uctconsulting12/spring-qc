@@ -1,0 +1,42 @@
+events:
+  enabled: true
+  output_dir: Output
+  save_csv: true
+  save_json: true
+  defect:
+    enabled: true
+    output_dir: Output/defects
+    num_frames: 5
+    max_side: 256
+inference:
+  batch_size: 1
+  stream: false
+  verbose: true
+model:
+  class_names:
+    0: Spring
+  conf_threshold: 0.75
+  device: auto
+  iou_threshold: 0.3
+  path: model/best.pt
+roi:
+  points:
+  - - 857
+    - 84
+  - - 762
+    - 623
+  - - 1509
+    - 709
+  - - 1485
+    - 198
+tracking:
+  enabled: true
+  iou_threshold: 0.5
+  max_age: 30
+  min_hits: 3
+  persist: true
+  tracker: bytetrack
+  recover_frames: 30
+  recover_dist: 120
+  out_frames: 90
+  confirm_frames: 100

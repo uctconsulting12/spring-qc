@@ -1,0 +1,17 @@
+.git/
+.gitattributes
+.gitignore
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.log
+qc.db
+qc.db-journal
+qc.db-wal
+uploads/
+Output/
+_tmp/
+.env
+README.md

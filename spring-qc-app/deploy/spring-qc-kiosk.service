@@ -1,0 +1,28 @@
+# systemd --user unit for the operator touch panel (Linux). Starts the kiosk
+# browser as soon as the panel's desktop session is up, and restarts it if
+# Chromium ever crashes.
+#
+# Install (as the panel's login user, e.g. "operator"):
+#   mkdir -p ~/.config/systemd/user
+#   cp spring-qc-kiosk.service ~/.config/systemd/user/
+#   cp kiosk-operator.sh ~/spring-qc-kiosk.sh && chmod +x ~/spring-qc-kiosk.sh
+#   # edit EDGE_HOST in that copy, or set it in this unit's Environment= line
+#   systemctl --user daemon-reload
+#   systemctl --user enable --now spring-qc-kiosk.service
+#   loginctl enable-linger operator      # so it starts even before login, on autologin panels
+
+[Unit]
+Description=Spring QC operator kiosk
+After=graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+Environment=EDGE_HOST=192.168.1.50
+Environment=EDGE_PORT=8001
+Environment=DISPLAY=:0
+ExecStart=%h/spring-qc-kiosk.sh
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=graphical-session.target

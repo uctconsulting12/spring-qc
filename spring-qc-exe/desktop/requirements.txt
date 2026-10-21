@@ -1,0 +1,6 @@
+# Only what's new beyond ../server/requirements-build.txt - Desktop reuses
+# the same venv as the server build (same app deps, same torch/CUDA), this
+# just adds the windowed UI + tray icon pieces.
+pystray>=0.19.5
+pillow>=10.0.0
+pyinstaller>=6.10

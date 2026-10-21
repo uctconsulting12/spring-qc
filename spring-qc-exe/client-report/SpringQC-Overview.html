@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Spring QC — Product Overview</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm 20mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #1c2430;
+    margin: 0;
+    font-size: 11.5pt;
+    line-height: 1.5;
+  }
+  .cover {
+    height: 267mm;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+    background: linear-gradient(160deg, #0f1c33 0%, #16294a 55%, #0f1c33 100%);
+    color: #fff;
+    padding: 30mm 20mm;
+    page-break-after: always;
+    border-radius: 0;
+  }
+  .cover .tag {
+    display: inline-block;
+    background: #2e6bff;
+    color: #fff;
+    font-size: 10pt;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 20px;
+    margin-bottom: 22px;
+  }
+  .cover h1 {
+    font-size: 40pt;
+    margin: 0 0 8px 0;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+  .cover h2 {
+    font-size: 15pt;
+    font-weight: 400;
+    color: #b8c6e6;
+    margin: 0 0 40px 0;
+    max-width: 420px;
+  }
+  .cover .meta {
+    margin-top: 60px;
+    font-size: 10pt;
+    color: #8a9dc4;
+    border-top: 1px solid #33456e;
+    padding-top: 14px;
+    width: 100%;
+    max-width: 460px;
+  }
+  .cover .meta div { margin-bottom: 4px; }
+  section { page-break-inside: avoid; }
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  h1.section-title {
+    font-size: 19pt;
+    color: #0f1c33;
+    border-bottom: 3px solid #2e6bff;
+    padding-bottom: 8px;
+    margin: 0 0 16px 0;
+  }
+  h2.sub {
+    font-size: 13.5pt;
+    color: #16294a;
+    margin: 22px 0 8px 0;
+  }
+  p { margin: 0 0 10px 0; color: #33415a; }
+  .lede {
+    font-size: 12.5pt;
+    color: #16294a;
+    background: #eef3ff;
+    border-left: 4px solid #2e6bff;
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+  }
+  ul.feature-list { margin: 6px 0 14px 0; padding-left: 20px; }
+  ul.feature-list li { margin-bottom: 6px; color: #33415a; }
+  .flow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin: 18px 0 22px 0;
+  }
+  .flow .step {
+    flex: 1;
+    background: #f4f7fd;
+    border: 1px solid #dbe4f5;
+    border-radius: 10px;
+    padding: 12px 10px;
+    text-align: center;
+    font-size: 9.5pt;
+    color: #16294a;
+    font-weight: 600;
+  }
+  .flow .step .n {
+    display: block;
+    font-size: 15pt;
+    color: #2e6bff;
+    font-weight: 800;
+    margin-bottom: 4px;
+  }
+  .flow .arrow { color: #9fb2d6; font-size: 16pt; }
+
+  .shot {
+    background: #fff;
+    border: 1px solid #dbe4f5;
+    border-radius: 10px;
+    padding: 10px;
+    box-shadow: 0 2px 10px rgba(15,28,51,0.08);
+    margin: 10px 0 4px 0;
+  }
+  .shot img {
+    width: 100%;
+    display: block;
+    border-radius: 6px;
+    border: 1px solid #e4e9f2;
+  }
+  .caption {
+    font-size: 9.5pt;
+    color: #6b7891;
+    margin: 6px 0 18px 0;
+    padding-left: 2px;
+  }
+  .two-col {
+    display: flex;
+    gap: 16px;
+  }
+  .two-col > div { flex: 1; }
+
+  table.spec {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 20px 0;
+    font-size: 10pt;
+  }
+  table.spec th {
+    background: #16294a;
+    color: #fff;
+    text-align: left;
+    padding: 8px 10px;
+    font-weight: 600;
+  }
+  table.spec td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #e4e9f2;
+    color: #33415a;
+  }
+  table.spec tr:nth-child(even) td { background: #f7f9fd; }
+
+  .benefits {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 12px 0 20px 0;
+  }
+  .benefit {
+    background: #f4f7fd;
+    border-radius: 8px;
+    padding: 12px 14px;
+    border: 1px solid #dbe4f5;
+  }
+  .benefit .h { font-weight: 700; color: #16294a; font-size: 10.5pt; margin-bottom: 3px; }
+  .benefit .d { font-size: 9.5pt; color: #556076; }
+
+  .footer-note {
+    font-size: 9pt;
+    color: #8a93a6;
+    text-align: center;
+    margin-top: 30px;
+  }
+  .badge-row { display:flex; gap:8px; flex-wrap: wrap; margin: 4px 0 16px 0; }
+  .badge {
+    background:#eef3ff; color:#2e4a8f; font-size:9pt; font-weight:600;
+    padding:4px 10px; border-radius: 14px; border:1px solid #cddaf5;
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="tag">Vision-Based Quality Control</div>
+  <h1>Spring QC</h1>
+  <h2>Automated, AI-powered visual inspection for spring manufacturing lines — real-time defect detection, operator sign-off, and full production traceability.</h2>
+  <div class="meta">
+    <div><strong>Prepared for:</strong> Client / Site Evaluation</div>
+    <div><strong>Document type:</strong> Product Overview</div>
+    <div><strong>Date:</strong> September 2026</div>
+  </div>
+</div>
+
+<!-- PAGE 1: WHAT IS IT -->
+<div class="page">
+<h1 class="section-title">What is Spring QC?</h1>
+<p class="lede">Spring QC watches your production line through a camera, automatically detects each spring as it passes, and gives the operator a clear photo record to approve or reject — every decision logged, timestamped, and searchable later.</p>
+
+<p>On a spring manufacturing line, springs move past an inspection point continuously and defects are easy to miss under manual-only visual checks — especially over long shifts. Spring QC adds an AI "second pair of eyes" that never gets tired: it watches the camera feed, recognizes when a spring enters and leaves the inspection zone, captures clean images of it, and hands those images to the operator to make the final call. Nothing is auto-rejected without a human decision — the software assists, the operator decides.</p>
+
+<h2 class="sub">Who uses it</h2>
+<ul class="feature-list">
+  <li><strong>Operators</strong> — sit at a simple touch-friendly screen, sign in with a PIN, and tap Defective / Not Defective / Skip as each spring's photos appear.</li>
+  <li><strong>Supervisors / Admins</strong> — set up cameras, define the inspection zone, add operators, and tune detection sensitivity.</li>
+  <li><strong>Quality / Management</strong> — pull up reports at any time: inspection counts, defect rates, per-operator performance, and exportable records with photos.</li>
+</ul>
+
+<h2 class="sub">How it works, in four steps</h2>
+<div class="flow">
+  <div class="step"><span class="n">1</span>Camera / video<br>feeds the line</div>
+  <div class="arrow">&#8594;</div>
+  <div class="step"><span class="n">2</span>AI detects &amp;<br>tracks each spring</div>
+  <div class="arrow">&#8594;</div>
+  <div class="step"><span class="n">3</span>Operator reviews<br>photos &amp; decides</div>
+  <div class="arrow">&#8594;</div>
+  <div class="step"><span class="n">4</span>Result logged for<br>reports &amp; audit</div>
+</div>
+
+<p>Everything is recorded automatically as it happens — no paperwork, no manual counting. Supervisors can watch any live station remotely, and full reports (with photos) can be exported to Excel for any date range at any time.</p>
+</div>
+
+<!-- PAGE 2: ADMIN SETUP -->
+<div class="page">
+<h1 class="section-title">Setting Up a Line — Admin View</h1>
+<p>The Admin dashboard is where a supervisor connects cameras to operators, draws the inspection zone, and controls when a station goes live.</p>
+
+<div class="shot"><img src="img-assignments.png"></div>
+<p class="caption">Operator Assignments — each operator is linked to a camera (RTSP) or a recorded test video, with its own inspection zone (ROI) and a Live / Off switch.</p>
+
+<div class="two-col">
+  <div>
+    <div class="shot"><img src="img-operators.png"></div>
+    <p class="caption">Adding an operator — name, machine number, and a 4-digit PIN for sign-in. Existing operators are listed with status at a glance.</p>
+  </div>
+  <div>
+    <div class="shot"><img src="img-settings.png"></div>
+    <p class="caption">Inference settings — detection confidence, tracking behaviour, and timing rules can be tuned per site, each with a plain-language tooltip.</p>
+  </div>
+</div>
+
+<h2 class="sub">Why this matters</h2>
+<ul class="feature-list">
+  <li><strong>No fixed camera wiring assumptions</strong> — works with live RTSP network cameras or a pre-recorded test video, so a line can be trialled before a camera is even installed.</li>
+  <li><strong>Per-operator isolation</strong> — each operator's camera, zone, and settings are independent; one station going down doesn't affect another.</li>
+  <li><strong>Tunable, not fixed</strong> — detection sensitivity and timing are adjustable without any code change or reinstall, so it can be tuned to a specific line's speed and lighting.</li>
+</ul>
+</div>
+
+<!-- PAGE 3: LIVE MONITORING -->
+<div class="page">
+<h1 class="section-title">Live Monitoring</h1>
+<p>Supervisors can watch any operator's live inspection feed from their own desk — without interrupting the operator's own decision-making. This is a view-only window: the operator on the floor always makes the actual accept/reject call.</p>
+
+<div class="shot"><img src="img-monitor.png"></div>
+<p class="caption">Monitor screen — pick any live operator from the dropdown to preview their camera feed and see spring events (IN / OUT / duration) land in real time.</p>
+
+<div class="badge-row">
+  <span class="badge">Real-time feed</span>
+  <span class="badge">Event timeline</span>
+  <span class="badge">Multi-station overview</span>
+  <span class="badge">View-only, no interference</span>
+</div>
+
+<p>This is especially useful for a floor supervisor managing several lines at once, or for spot-checking a station remotely instead of walking the floor every time.</p>
+</div>
+
+<!-- PAGE 4: REPORTS -->
+<div class="page">
+<h1 class="section-title">Reports &amp; Traceability</h1>
+<p>Every inspection decision is stored permanently, with its photos, timestamps, and the operator who made the call. The Reports section turns that history into numbers management can actually use.</p>
+
+<div class="shot"><img src="img-reports-overview.png"></div>
+<p class="caption">Reports overview — total inspected, defect rate, and day-by-day / operator-by-operator trends, with a quick 7/14/30-day toggle.</p>
+
+<div class="shot"><img src="img-reports-detail.png"></div>
+<p class="caption">Per-operator detail and a searchable inspection log — every spring, with its captured photos, decision, and timing, filterable by date and exportable straight to Excel.</p>
+
+<h2 class="sub">What this gives a quality team</h2>
+<ul class="feature-list">
+  <li><strong>Full audit trail</strong> — every spring's photos and decision are retrievable later, not just a pass/fail count.</li>
+  <li><strong>Defect-rate trends</strong> — spot a line or operator drifting out of tolerance early, not at month-end.</li>
+  <li><strong>One-click Excel export</strong> — for customer audits, internal reviews, or ISO-style record-keeping, with images embedded in the spreadsheet.</li>
+</ul>
+</div>
+
+<!-- PAGE 5: OPERATOR EXPERIENCE -->
+<div class="page">
+<h1 class="section-title">The Operator's Screen</h1>
+<p>Deliberately kept simple: no keyboard, no menus to learn — an operator's entire shift happens through two screens.</p>
+
+<div class="two-col">
+  <div>
+    <div class="shot"><img src="img-signin.png"></div>
+    <p class="caption">Sign-in — tap your name, enter your PIN. Takes seconds, no typing a username.</p>
+  </div>
+  <div>
+    <div class="shot"><img src="img-operator-station.png"></div>
+    <p class="caption">Inspection station — large, touch-friendly Not Defective / Defective / Skip buttons appear as each spring's photos are ready for review.</p>
+  </div>
+</div>
+
+<p>This screen is designed to be usable on a factory floor: large touch targets, high contrast for varied lighting, and a live "waiting for admin to assign a camera" state so an idle station is never confusing — it always tells the operator exactly what's happening.</p>
+</div>
+
+<!-- PAGE 6: SPECS -->
+<div class="page">
+<h1 class="section-title">Technical Specification</h1>
+
+<h2 class="sub">Detection &amp; Tracking</h2>
+<table class="spec">
+<tr><th>Item</th><th>Detail</th></tr>
+<tr><td>Detection model</td><td>YOLO (custom-trained on spring imagery), configurable model file per site</td></tr>
+<tr><td>Tracking</td><td>ByteTrack — keeps a consistent identity for each spring as it moves through frame</td></tr>
+<tr><td>Acceleration</td><td>GPU (NVIDIA CUDA) with automatic fallback to CPU if no GPU is present</td></tr>
+<tr><td>Camera input</td><td>RTSP network cameras, or a pre-recorded video file for testing/training</td></tr>
+<tr><td>Tunable parameters</td><td>Confidence threshold, IoU threshold, ROI dwell time, ID-recovery window/distance — all adjustable from the Admin UI, no code changes</td></tr>
+</table>
+
+<h2 class="sub">Platform &amp; Deployment</h2>
+<table class="spec">
+<tr><th>Item</th><th>Detail</th></tr>
+<tr><td>Architecture</td><td>One on-site workstation (with GPU) runs the detection/API/database as a background service; every other PC connects with a plain web browser over the local network</td></tr>
+<tr><td>Client requirement</td><td>None — a desktop shortcut opens the relevant page in whatever browser is already installed; no software to install on operator/admin PCs</td></tr>
+<tr><td>Always-on operation</td><td>Runs as a Windows Service — starts automatically on boot, keeps inferencing with nobody logged in</td></tr>
+<tr><td>Database</td><td>PostgreSQL — stores every operator, assignment, and inspection record with captured images</td></tr>
+<tr><td>Network</td><td>Runs entirely on the plant's local network — no internet connection required for daily operation</td></tr>
+<tr><td>Data export</td><td>Excel export with embedded images, filterable by date range / operator / result</td></tr>
+</table>
+
+<h2 class="sub">Why this architecture</h2>
+<p>Only one machine needs the GPU and the install — everyone else just needs a browser, which every plant PC already has. This keeps rollout simple (one install, many desktop icons) and keeps the inspection service running independently of whether any particular screen is open or closed.</p>
+</div>
+
+<!-- PAGE 7: BENEFITS -->
+<div class="page">
+<h1 class="section-title">Why Spring QC</h1>
+
+<div class="benefits">
+  <div class="benefit"><div class="h">Consistent inspection</div><div class="d">The AI watches every spring the same way, every shift — reducing the fatigue-driven misses that come with fully manual checks.</div></div>
+  <div class="benefit"><div class="h">Operator stays in control</div><div class="d">The system never auto-rejects a spring — it surfaces evidence and the operator makes the final call, keeping human judgment central.</div></div>
+  <div class="benefit"><div class="h">Full traceability</div><div class="d">Every decision is timestamped, attributed to an operator, and backed by photos — ready for audits or customer quality reviews.</div></div>
+  <div class="benefit"><div class="h">Fast to roll out</div><div class="d">One server install; every other station just gets a desktop shortcut. No client software, no per-PC setup.</div></div>
+  <div class="benefit"><div class="h">Works without internet</div><div class="d">Runs entirely on the plant's own local network — no cloud dependency, no data leaving the site.</div></div>
+  <div class="benefit"><div class="h">Tunable per line</div><div class="d">Detection sensitivity and timing are adjustable in the Admin panel to match each line's speed and lighting — no reprogramming needed.</div></div>
+</div>
+
+<h2 class="sub">Getting started</h2>
+<p>A typical rollout: the server software is installed once on a workstation with a GPU; the admin adds operators and assigns cameras with a few clicks; each operator/admin PC gets a one-time desktop shortcut; and the line is inspecting within the same day. No specialised IT infrastructure or ongoing internet connection is required.</p>
+
+<div class="footer-note">Spring QC — Vision-Based Quality Control System</div>
+</div>
+
+</body>
+</html>

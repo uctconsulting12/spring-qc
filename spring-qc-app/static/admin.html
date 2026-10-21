@@ -1,0 +1,1022 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spring QC · Admin</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="/static/app.css">
+<script>try{var t=localStorage.getItem('spring_qc_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<style>
+    .assign-list { display: flex; flex-direction: column; gap: 12px; }
+    .assign-row {
+        display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;
+        padding: 16px; background: var(--panel); border: 1px solid var(--border);
+        border-radius: var(--r-lg); box-shadow: var(--shadow);
+    }
+    .assign-row .field.grow { flex: 1 1 240px; }
+    .assign-row .row-cta { display: flex; gap: 8px; margin-left: auto; }
+    .assign-row .row-right { display: flex; align-items: center; gap: 14px; margin-left: auto; flex-wrap: wrap; }
+    .assigned-info { flex: 1 1 260px; min-width: 0; }
+    .assigned-info .op-name { font-family: var(--font-head); font-weight: 700; font-size: 15px; }
+    .assigned-info .src-label { font-size: 13px; color: var(--ink-soft); margin-top: 3px; word-break: break-all; }
+    .assigned-info .row-actions { margin-top: 9px; display: flex; gap: 4px; flex-wrap: wrap; }
+    input[type="file"].input { height: auto; padding: 9px 12px; }
+
+    .set-note { margin: 0 0 6px; color: var(--ink-soft); font-size: 13px; line-height: 1.5; }
+    .set-section > h4 {
+        font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-muted);
+        font-weight: 700; margin: 20px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--border-soft);
+    }
+    .set-section:first-of-type > h4 { margin-top: 4px; }
+    .field-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 14px 16px; }
+    .field-grid .full { grid-column: 1 / -1; }
+    .field-grid label { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); }
+    .checkbox-row { display: flex; align-items: center; gap: 9px; margin-top: 16px; }
+    .checkbox-row label { font-size: 13.5px; color: var(--ink); font-weight: 600; }
+    .checkbox-row input { width: 17px; height: 17px; accent-color: var(--blue); }
+    .op-form { display: grid; gap: 12px 14px; align-items: end; grid-template-columns: 1.5fr 1fr 0.9fr auto; }
+    .op-form label { display: block; margin-bottom: 6px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); }
+    @media (max-width: 620px) { .op-form { grid-template-columns: 1fr 1fr; } .op-form .btn { grid-column: 1 / -1; } }
+    .roi-box { position: relative; background: #000; border-radius: var(--r-md); overflow: hidden; }
+    .roi-box canvas { width: 100%; height: auto; display: block; }
+    .modal__body input[type="text"], .modal__body input[type="number"], .modal__body select {
+        width: 100%; height: 40px; padding: 0 12px; border: 1px solid var(--border);
+        border-radius: var(--r-md); background: var(--panel); color: var(--ink); font: inherit; font-size: 14px;
+    }
+    .modal__body select { appearance: none; padding-right: 30px;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath fill='%236b7f8d' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+        background-repeat: no-repeat; background-position: right 11px center; }
+    .save-msg { margin-top: 12px; font-size: 13px; font-weight: 600; color: var(--green); }
+    .save-msg.error { color: var(--red); }
+</style>
+</head>
+<body>
+<div id="app-nav"></div>
+
+<main class="page">
+    <div class="page-head">
+        <div class="page-head__titles">
+            <h1>Operator Assignments</h1>
+            <p>Assign a camera or test video to each operator, confirm the ROI, then flip it live.</p>
+        </div>
+        <div class="page-head__actions">
+            <button class="btn btn--ghost" onclick="openOperatorModal()">Operators</button>
+            <button class="btn btn--ghost" onclick="openSettingsModal()">Settings</button>
+        </div>
+    </div>
+
+    <div class="toolbar">
+        <span class="badge" id="model-badge">Model <b>–</b></span>
+        <span class="badge" id="gpu-badge">Device <b>–</b></span>
+        <span class="badge" id="roi-badge">Default ROI <b>–</b></span>
+        <span class="toolbar__spacer"></span>
+        <button class="btn" onclick="addAssignmentRow()">Add assignment</button>
+    </div>
+
+    <div class="assign-list" id="assign-rows"></div>
+</main>
+
+<div class="modal-overlay" id="roi-modal">
+    <div class="modal modal--xl">
+        <div class="modal__head">
+            <h3>Draw ROI</h3>
+            <button class="modal__close" onclick="closeRoiEditor()">&times;</button>
+        </div>
+        <div class="modal__body">
+            <p style="margin:0 0 10px;color:var(--ink-soft);font-size:14px;">
+                Click on the frame to place polygon points. The ROI defines the "in" region.
+            </p>
+            <div class="roi-box">
+                <canvas id="roi-canvas" width="960" height="540" style="cursor:crosshair;"></canvas>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;">
+                <button class="btn btn--ghost" onclick="roiUndo()">Undo</button>
+                <button class="btn btn--ghost" onclick="roiClear()">Clear</button>
+                <button class="btn btn--ghost" onclick="roiLoadExisting()">Load current</button>
+                <span class="grow"></span>
+                <button class="btn" onclick="roiSave()" id="roi-save-btn">Save ROI</button>
+            </div>
+            <div id="roi-msg" class="save-msg"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="roi-confirm-modal">
+    <div class="modal modal--xl">
+        <div class="modal__head">
+            <h3>Confirm ROI</h3>
+            <button class="modal__close" onclick="cancelRoiFlow()">&times;</button>
+        </div>
+        <div class="modal__body">
+            <p style="margin:0 0 10px;color:var(--ink-soft);font-size:14px;">
+                Yellow outline is the current saved ROI, over the first frame from this source. Keep it, or draw a new one.
+            </p>
+            <div class="roi-box">
+                <canvas id="roi-confirm-canvas" width="960" height="540"></canvas>
+            </div>
+            <div id="roi-confirm-msg" class="save-msg"></div>
+        </div>
+        <div class="modal__foot" style="justify-content:space-between;">
+            <button class="btn btn--ghost" onclick="cancelRoiFlow()">Cancel</button>
+            <div style="display:flex;gap:8px;">
+                <button class="btn btn--ghost" onclick="openRoiEditorForRow()">Draw new ROI</button>
+                <button class="btn" onclick="confirmKeepRoi()">Keep current ROI</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="operator-modal">
+    <div class="modal modal--lg">
+        <div class="modal__head">
+            <h3>Configure operators</h3>
+            <button class="modal__close" onclick="closeOperatorModal()">&times;</button>
+        </div>
+        <div class="modal__body">
+            <div class="op-form">
+                <div>
+                    <label>Name</label>
+                    <input type="text" id="op-form-name" placeholder="Operator name">
+                </div>
+                <div>
+                    <label>Machine No</label>
+                    <input type="text" id="op-form-machine" placeholder="e.g. M-04">
+                </div>
+                <div>
+                    <label>PIN (4 digits)</label>
+                    <input type="text" id="op-form-pin" placeholder="••••" maxlength="4" inputmode="numeric" pattern="[0-9]*">
+                </div>
+                <button class="btn" onclick="saveOperatorForm()" id="op-form-save">Add operator</button>
+            </div>
+            <div id="operator-msg" class="save-msg"></div>
+            <div style="margin-top:10px;">
+                <button class="btn btn--subtle btn--sm" onclick="resetOperatorForm()">+ New operator (clear form)</button>
+            </div>
+
+            <div class="table-wrap" style="margin-top:20px;">
+                <table class="data">
+                    <thead>
+                        <tr><th>Name</th><th>Machine No</th><th>ROI</th><th>Status</th><th></th></tr>
+                    </thead>
+                    <tbody id="operator-table-body"></tbody>
+                </table>
+                <div class="empty-state" id="operator-table-empty" style="display:none;">No operators configured yet.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="settings-modal">
+    <div class="modal modal--lg">
+        <div class="modal__head">
+            <h3>Inference settings</h3>
+            <button class="modal__close" onclick="closeSettingsModal()">&times;</button>
+        </div>
+        <div class="modal__body">
+            <p class="set-note">
+                These apply the next time an operator's assignment goes live — already-running jobs keep whatever settings they started with.
+            </p>
+
+            <div class="set-section">
+                <h4>Model &amp; device</h4>
+                <div class="field-grid">
+                    <div class="full">
+                        <label>Model path<span class="info-dot" data-tip="Path to the YOLO weights (.pt) the detector loads. Change only after training a new model. Inside Docker this must be a path in the container, e.g. model/best.pt.">i</span></label>
+                        <input type="text" id="set-model" placeholder="model/best.pt">
+                    </div>
+                    <div>
+                        <label>Confidence threshold<span class="info-dot" data-tip="Minimum detection score (0–1) for a box to count as a spring. Higher = fewer false detections but may miss faint ones. Typical 0.5–0.8.">i</span></label>
+                        <input type="number" id="set-conf" step="0.01" min="0" max="1">
+                    </div>
+                    <div>
+                        <label>IoU threshold<span class="info-dot" data-tip="Overlap threshold used to merge duplicate boxes for the same object (non-max suppression). Lower merges more aggressively. Typical 0.3–0.5.">i</span></label>
+                        <input type="number" id="set-iou" step="0.01" min="0" max="1">
+                    </div>
+                    <div>
+                        <label>Device<span class="info-dot" data-tip="Where inference runs. 'auto' uses the GPU when available and falls back to CPU. Forcing 'cpu' is for debugging only — RTSP can't keep real time on CPU.">i</span></label>
+                        <select id="set-device">
+                            <option value="auto">auto (GPU if available)</option>
+                            <option value="cuda">cuda (GPU)</option>
+                            <option value="cpu">cpu</option>
+                            <option value="0">cuda:0</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="set-section">
+                <h4>Tracking</h4>
+                <div class="field-grid">
+                    <div>
+                        <label>Tracker<span class="info-dot" data-tip="Algorithm that keeps a stable ID on each spring across frames. ByteTrack is light and the default; the others cost more compute for little gain here.">i</span></label>
+                        <select id="set-tracker">
+                            <option value="bytetrack">ByteTrack (low compute, recommended)</option>
+                            <option value="botsort">BoT-SORT</option>
+                            <option value="deepsort">DeepSORT (ReID, more compute)</option>
+                            <option value="ocsort">OC-SORT</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label>ID recovery window (frames)<span class="info-dot" data-tip="If a spring's track is lost (occlusion, a missed detection), how many frames to keep trying to re-attach the same ID before giving up and issuing a new one.">i</span></label>
+                        <input type="number" id="set-recover-frame" step="1" min="0" placeholder="30">
+                    </div>
+                    <div>
+                        <label>ID recovery distance (px)<span class="info-dot" data-tip="Max pixel gap between a lost track and a fresh detection for them to be treated as the same spring during recovery.">i</span></label>
+                        <input type="number" id="set-recover-dist" step="1" min="0" placeholder="120">
+                    </div>
+                </div>
+                <div class="checkbox-row"><input type="checkbox" id="set-track"><label>Enable tracker<span class="info-dot" data-tip="Turn multi-frame tracking on/off. Off = each frame is detected independently, with no IN/OUT events and no S.No.">i</span></label></div>
+            </div>
+
+            <div class="set-section">
+                <h4>ROI events</h4>
+                <div class="field-grid">
+                    <div>
+                        <label>OUT after frames not in ROI<span class="info-dot" data-tip="A spring is marked OUT once it has been outside the ROI for this many consecutive frames. Higher = tolerates flicker at the ROI edge but registers OUT more slowly.">i</span></label>
+                        <input type="number" id="set-out-frames" step="1" min="1" placeholder="90">
+                    </div>
+                    <div>
+                        <label>IN confirmation window (frames)<span class="info-dot" data-tip="A spring must stay inside the ROI for this many consecutive frames before it counts as a real job and gets an S.No. Raise it if you get phantom springs; lower it if fast springs are missed.">i</span></label>
+                        <input type="number" id="set-confirm-frames" step="1" min="1" placeholder="100">
+                    </div>
+                </div>
+                <div class="checkbox-row"><input type="checkbox" id="set-events"><label>Enable IN/OUT events &amp; defect capture<span class="info-dot" data-tip="Master switch for recording inspections and saving the captured frames. Off = live view only, nothing is written to the database.">i</span></label></div>
+            </div>
+
+            <div id="settings-msg" class="save-msg"></div>
+        </div>
+        <div class="modal__foot">
+            <button class="btn btn--ghost" onclick="closeSettingsModal()">Cancel</button>
+            <button class="btn" onclick="saveSettings()">Save settings</button>
+        </div>
+    </div>
+</div>
+
+
+<script src="/static/nav.js"></script>
+<script>
+let LAST_OPERATORS = [];
+let ROWS = [];
+let rowSeq = 0;
+let activeRowId = null; // row currently going through the ROI confirm/edit flow
+
+// ---------------------------------------------------------- assignment rows
+
+function newRow(overrides) {
+    return Object.assign({
+        id: 'r' + (++rowSeq),
+        operator: '',
+        mode: 'rtsp',
+        rtspUrl: '',
+        fileId: null,
+        fileName: '',
+        sourceName: '',     // friendly name the admin assigns to this camera / video
+        sourceType: null,   // 'rtsp' | 'upload', set once configured
+        sourceLabel: '',
+        stage: 'draft',     // draft -> configured -> live
+        jobId: null,
+    }, overrides || {});
+}
+
+function addAssignmentRow() {
+    ROWS.push(newRow());
+    renderRows();
+}
+
+function getRow(id) { return ROWS.find(r => r.id === id); }
+
+async function removeRow(id) {
+    const row = getRow(id);
+    if (!row) return;
+    if (row.stage === 'live') { alert('Turn this assignment off before removing it.'); return; }
+    if (row.stage !== 'draft' && row.operator) {
+        try { await fetch('/assignments/' + encodeURIComponent(row.operator), { method: 'DELETE' }); } catch (e) {}
+    }
+    ROWS = ROWS.filter(r => r.id !== id);
+    if (!ROWS.length) ROWS.push(newRow());
+    renderRows();
+}
+
+function rowSetMode(id, m) {
+    const row = getRow(id);
+    if (!row) return;
+    row.mode = m;
+    renderRows();
+}
+
+function rowEditSource(id) {
+    const row = getRow(id);
+    if (!row || row.stage === 'live') return;
+    row.stage = 'draft';
+    renderRows();
+}
+
+function captureRowInputs() {
+    // Any global re-render rebuilds every row's DOM from its stored state,
+    // so pull whatever the admin has typed/selected back into that state
+    // first - otherwise an unrelated action (adding another row, toggling
+    // another row's mode) would silently wipe in-progress input here.
+    ROWS.forEach(row => {
+        if (row.stage !== 'draft') return;
+        const opEl = document.getElementById(row.id + '-operator');
+        if (opEl) row.operator = opEl.value;
+        const urlEl = document.getElementById(row.id + '-url');
+        if (urlEl) row.rtspUrl = urlEl.value;
+        const nameEl = document.getElementById(row.id + '-name');
+        if (nameEl) row.sourceName = nameEl.value;
+    });
+}
+
+function renderRows() {
+    captureRowInputs();
+    const container = document.getElementById('assign-rows');
+    container.innerHTML = '';
+    ROWS.forEach(row => container.appendChild(buildRowEl(row)));
+}
+
+function rowFileSelected(id, file) {
+    const row = getRow(id);
+    if (row) row.pendingFile = file;
+}
+
+function buildRowEl(row) {
+    const el = document.createElement('div');
+    el.className = 'assign-row';
+
+    if (row.stage === 'draft') {
+        const opOptions = ['<option value="">Select operator…</option>']
+            .concat(LAST_OPERATORS.map(op => {
+                const busy = op.assignment ? ' (live elsewhere)' : '';
+                const sel = op.name === row.operator ? ' selected' : '';
+                return `<option value="${op.name}"${sel}>${op.name}${op.machine_no ? ' — ' + op.machine_no : ''}${busy}</option>`;
+            }));
+        el.innerHTML = `
+            <div class="field" style="flex:0 0 190px;">
+                <span class="field-label">Operator</span>
+                <select class="select" id="${row.id}-operator">${opOptions.join('')}</select>
+            </div>
+            <div class="field">
+                <span class="field-label">Source</span>
+                <div class="segmented">
+                    <button type="button" class="${row.mode === 'rtsp' ? 'is-active' : ''}" onclick="rowSetMode('${row.id}','rtsp')">RTSP</button>
+                    <button type="button" class="${row.mode === 'upload' ? 'is-active' : ''}" onclick="rowSetMode('${row.id}','upload')">Test video</button>
+                </div>
+            </div>
+            <div class="field" style="flex:0 1 190px;">
+                <span class="field-label">Name</span>
+                <input class="input" type="text" id="${row.id}-name"
+                       placeholder="${row.mode === 'rtsp' ? 'e.g. Line 3 Cam' : 'e.g. Batch A test'}"
+                       value="${(row.sourceName || '').replace(/"/g, '&quot;')}">
+            </div>
+            <div class="field grow">
+                <span class="field-label">${row.mode === 'rtsp' ? 'RTSP URL' : 'Video file'}</span>
+                ${row.mode === 'rtsp'
+                    ? `<input class="input" type="text" id="${row.id}-url" placeholder="rtsp://user:pass@ip:554/stream" value="${(row.rtspUrl || '').replace(/"/g, '&quot;')}">`
+                    : `<input class="input" type="file" id="${row.id}-file" accept="video/*" onchange="rowFileSelected('${row.id}', this.files[0])">`}
+            </div>
+            <div class="row-cta">
+                <button class="btn" onclick="rowSave('${row.id}')">Save</button>
+                ${ROWS.length > 1 ? `<button class="btn btn--ghost" onclick="removeRow('${row.id}')" title="Remove">Remove</button>` : ''}
+            </div>
+        `;
+    } else {
+        const isLive = row.stage === 'live';
+        el.innerHTML = `
+            <div class="assigned-info">
+                <div class="op-name">${row.operator}</div>
+                <div class="src-label">${row.sourceName ? '<b>' + row.sourceName + '</b> — ' : ''}${row.sourceLabel}</div>
+                <div class="src-label">ROI: ${roiPointCountFor(row.operator)} pts (own to ${row.operator})</div>
+                <div class="row-actions">
+                    <button type="button" class="btn btn--link" onclick="rowReconfigureRoi('${row.id}')">Edit ROI</button>
+                    ${!isLive ? `<button type="button" class="btn btn--link" onclick="rowEditSource('${row.id}')">Change source</button>` : ''}
+                    ${!isLive ? `<button type="button" class="btn btn--link btn--danger" onclick="removeRow('${row.id}')">Remove</button>` : ''}
+                </div>
+            </div>
+            <div class="row-right">
+                <span class="pill ${isLive ? 'live' : 'off'}">${isLive ? 'Live' : 'Off'}</span>
+                <label class="switch">
+                    <input type="checkbox" ${isLive ? 'checked' : ''} onchange="rowToggleLive('${row.id}')">
+                    <span class="track"></span>
+                </label>
+                ${isLive ? `<a class="btn btn--link" href="/monitor?operator=${encodeURIComponent(row.operator)}" target="_blank">Preview →</a>` : ''}
+            </div>
+        `;
+    }
+    return el;
+}
+
+async function rowSave(id) {
+    const row = getRow(id);
+    if (!row) return;
+    const operator = document.getElementById(id + '-operator').value;
+    if (!operator) { alert('Select an operator first'); return; }
+    row.operator = operator;
+    const nameEl = document.getElementById(id + '-name');
+    row.sourceName = nameEl ? nameEl.value.trim() : (row.sourceName || '');
+
+    let sourceType, url = null, fileId = null, sourceLabel;
+    if (row.mode === 'rtsp') {
+        url = document.getElementById(id + '-url').value.trim();
+        if (!url) { alert('Enter an RTSP url'); return; }
+        sourceType = 'rtsp';
+        sourceLabel = url;
+    } else {
+        const fileInput = document.getElementById(id + '-file');
+        const file = (fileInput && fileInput.files[0]) || row.pendingFile;
+        if (!file) { alert('Choose a video file'); return; }
+        const fd = new FormData();
+        fd.append('file', file);
+        const up = await fetch('/upload', { method: 'POST', body: fd });
+        if (!up.ok) {
+            const err = await up.json().catch(() => ({}));
+            alert('Upload failed: ' + (err.detail || up.statusText));
+            return;
+        }
+        const upJson = await up.json();
+        fileId = upJson.file_id;
+        sourceType = 'upload';
+        sourceLabel = upJson.filename;
+    }
+
+    row.sourceType = sourceType;
+    row.rtspUrl = url || '';
+    row.fileId = fileId;
+    if (sourceType === 'upload') row.fileName = sourceLabel;
+    row.sourceLabel = sourceLabel;
+    await saveAssignment(row);
+    beginRoiFlow(row.id);
+}
+
+// Persist operator -> source so the setup survives a restart / page reload.
+async function saveAssignment(row) {
+    try {
+        const r = await fetch('/assignments/' + encodeURIComponent(row.operator), {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                source_type: row.sourceType,
+                source_name: row.sourceName || null,
+                rtsp_url: row.sourceType === 'rtsp' ? row.rtspUrl : null,
+                file_id: row.sourceType === 'upload' ? row.fileId : null,
+                file_name: row.sourceType === 'upload' ? row.fileName : null,
+            }),
+        });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || 'save failed');
+    } catch (e) {
+        alert('Could not save this assignment: ' + e.message);
+    }
+}
+
+async function rowToggleLive(id) {
+    const row = getRow(id);
+    if (!row) return;
+    if (row.stage === 'live') {
+        if (row.jobId) { try { await fetch('/stop/' + row.jobId, { method: 'POST' }); } catch (e) {} }
+        row.stage = 'configured';
+        row.jobId = null;
+        renderRows();
+        return;
+    }
+    const payload = { source_type: row.sourceType, operator: row.operator };
+    if (row.sourceName) payload.label = row.sourceName;
+    if (row.sourceType === 'rtsp') payload.url = row.rtspUrl; else payload.file_id = row.fileId;
+    const r = await fetch('/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
+    if (!r.ok) {
+        const err = await r.json().catch(() => ({}));
+        alert('Could not go live: ' + (err.detail || r.statusText));
+        renderRows();
+        return;
+    }
+    const j = await r.json();
+    row.jobId = j.job_id;
+    row.stage = 'live';
+    renderRows();
+}
+
+function rowReconfigureRoi(id) {
+    const row = getRow(id);
+    if (!row) return;
+    beginRoiFlow(id);
+}
+
+// ------------------------------------------------------- ROI confirm/edit --
+
+function roiPointCountFor(name) {
+    const op = LAST_OPERATORS.find(o => o.name === name);
+    return (op && op.roi_points) ? op.roi_points.length : operatorRoi(name).length;
+}
+
+function operatorRoi(name) {
+    // Each operator's ROI is their own (different cameras, different
+    // geometry) - fall back to the global config.yaml default only for an
+    // operator who has never saved one yet.
+    const op = LAST_OPERATORS.find(o => o.name === name);
+    if (op && op.roi_points && op.roi_points.length) return op.roi_points;
+    return window.DEFAULT_ROI || [];
+}
+
+async function beginRoiFlow(rowId) {
+    activeRowId = rowId;
+    const row = getRow(rowId);
+    window.ACTIVE_ROI_POINTS = operatorRoi(row.operator);
+    const msgEl = document.getElementById('roi-confirm-msg');
+    msgEl.textContent = 'Fetching first frame...';
+    msgEl.className = 'save-msg';
+    document.getElementById('roi-confirm-modal').classList.add('open');
+
+    let frameUrl = null;
+    try {
+        const qs = row.sourceType === 'upload'
+            ? ('file_id=' + encodeURIComponent(row.fileId))
+            : ('url=' + encodeURIComponent(row.rtspUrl));
+        const resp = await fetch('/frame?' + qs);
+        if (resp.ok) {
+            frameUrl = URL.createObjectURL(await resp.blob());
+            msgEl.textContent = '';
+        } else {
+            const err = await resp.json().catch(() => ({}));
+            msgEl.textContent = 'Could not fetch a preview frame (' + (err.detail || resp.statusText) + ').';
+            msgEl.className = 'save-msg error';
+        }
+    } catch (e) {
+        msgEl.textContent = 'Could not fetch a preview frame.';
+        msgEl.className = 'save-msg error';
+    }
+
+    if (window.PENDING_FRAME_URL) URL.revokeObjectURL(window.PENDING_FRAME_URL);
+    window.PENDING_FRAME_URL = frameUrl;
+    drawRoiConfirmPreview(frameUrl);
+}
+
+function drawRoiConfirmPreview(frameUrl) {
+    const canvas = document.getElementById('roi-confirm-canvas');
+    const ctx2 = canvas.getContext('2d');
+    const roi = window.ACTIVE_ROI_POINTS || [];
+    function drawOverlay() {
+        if (roi.length >= 3) {
+            ctx2.beginPath();
+            ctx2.strokeStyle = '#facc15';
+            ctx2.lineWidth = 2;
+            ctx2.moveTo(roi[0][0], roi[0][1]);
+            for (let i = 1; i < roi.length; i++) ctx2.lineTo(roi[i][0], roi[i][1]);
+            ctx2.closePath();
+            ctx2.stroke();
+            ctx2.fillStyle = 'rgba(250,204,21,0.15)';
+            ctx2.fill();
+        }
+    }
+    if (frameUrl) {
+        const img = new Image();
+        img.onload = () => {
+            canvas.width = img.naturalWidth || 960;
+            canvas.height = img.naturalHeight || 540;
+            ctx2.drawImage(img, 0, 0);
+            drawOverlay();
+        };
+        img.src = frameUrl;
+    } else {
+        canvas.width = 960; canvas.height = 540;
+        ctx2.fillStyle = '#10161d';
+        ctx2.fillRect(0, 0, canvas.width, canvas.height);
+        drawOverlay();
+    }
+}
+
+function cancelRoiFlow() {
+    document.getElementById('roi-confirm-modal').classList.remove('open');
+    activeRowId = null;
+}
+
+async function confirmKeepRoi() {
+    document.getElementById('roi-confirm-modal').classList.remove('open');
+    const row = getRow(activeRowId);
+    // Persist the shown ROI as this operator's own from here on - even if it
+    // was only the global default up to now - so editing it later (or a
+    // future default change) never leaks between operators.
+    if (row && window.ACTIVE_ROI_POINTS && window.ACTIVE_ROI_POINTS.length >= 3) {
+        await saveOperatorRoi(row.operator, window.ACTIVE_ROI_POINTS);
+    }
+    finishRoiForActiveRow();
+}
+
+async function saveOperatorRoi(operatorName, pts) {
+    try {
+        const r = await fetch('/operators/' + encodeURIComponent(operatorName) + '/roi', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roi_points: pts }),
+        });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || 'save failed');
+        const opCache = LAST_OPERATORS.find(o => o.name === operatorName);
+        if (opCache) opCache.roi_points = pts;
+        return true;
+    } catch (e) {
+        alert('Could not save ROI for ' + operatorName + ': ' + e.message);
+        return false;
+    }
+}
+
+function finishRoiForActiveRow() {
+    const row = getRow(activeRowId);
+    activeRowId = null;
+    if (!row) return;
+    // A live job keeps running on the new ROI (applied server-side straight to
+    // the detector) - don't knock it back to 'configured'.
+    if (row.stage !== 'live') row.stage = 'configured';
+    renderRows();
+}
+
+let ROI_POINTS = [];
+let ROI_IMG = null;
+
+function roiSetMsg(text, isErr) {
+    const el = document.getElementById('roi-msg');
+    el.textContent = text || '';
+    el.className = 'save-msg' + (isErr ? ' error' : '');
+}
+
+function openRoiEditorForRow() {
+    document.getElementById('roi-confirm-modal').classList.remove('open');
+    ROI_POINTS = (window.ACTIVE_ROI_POINTS && window.ACTIVE_ROI_POINTS.length) ? window.ACTIVE_ROI_POINTS.map(p => [p[0], p[1]]) : [];
+    document.getElementById('roi-modal').classList.add('open');
+    const canvas = document.getElementById('roi-canvas');
+    canvas.onclick = roiCanvasClick;
+    if (window.PENDING_FRAME_URL) {
+        roiShowImage(window.PENDING_FRAME_URL);
+    } else {
+        canvas.width = 960; canvas.height = 540;
+        ROI_IMG = null;
+        roiSetMsg('No preview frame available - draw against a blank canvas or cancel', true);
+        roiRedraw();
+    }
+}
+
+function roiShowImage(url) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        const canvas = document.getElementById('roi-canvas');
+        img.onload = () => {
+            canvas.width = img.naturalWidth || 960;
+            canvas.height = img.naturalHeight || 540;
+            ROI_IMG = { url: url };
+            roiRedraw();
+            roiSetMsg(ROI_POINTS.length + ' point' + (ROI_POINTS.length === 1 ? '' : 's'), false);
+            resolve();
+        };
+        img.onerror = () => { roiSetMsg('Could not load frame', true); resolve(); };
+        img.src = url;
+    });
+}
+
+function closeRoiEditor() {
+    document.getElementById('roi-modal').classList.remove('open');
+    ROI_POINTS = [];
+    activeRowId = null;
+}
+
+function roiCanvasClick(ev) {
+    const canvas = document.getElementById('roi-canvas');
+    const rect = canvas.getBoundingClientRect();
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const x = Math.round((ev.clientX - rect.left) * scaleX);
+    const y = Math.round((ev.clientY - rect.top) * scaleY);
+    ROI_POINTS.push([x, y]);
+    roiRedraw();
+    roiSetMsg(ROI_POINTS.length + ' point' + (ROI_POINTS.length === 1 ? '' : 's'), false);
+}
+
+function roiRedraw() {
+    const canvas = document.getElementById('roi-canvas');
+    const ctx2 = canvas.getContext('2d');
+    ctx2.clearRect(0, 0, canvas.width, canvas.height);
+    if (ROI_IMG && ROI_IMG.url) {
+        const img = new Image();
+        img.onload = () => { ctx2.drawImage(img, 0, 0, canvas.width, canvas.height); drawPts(); };
+        img.src = ROI_IMG.url;
+    } else {
+        ctx2.fillStyle = '#10161d';
+        ctx2.fillRect(0, 0, canvas.width, canvas.height);
+        drawPts();
+    }
+    function drawPts() {
+        if (ROI_POINTS.length >= 3) {
+            ctx2.beginPath();
+            ctx2.strokeStyle = '#facc15';
+            ctx2.lineWidth = 2;
+            ctx2.moveTo(ROI_POINTS[0][0], ROI_POINTS[0][1]);
+            for (let i = 1; i < ROI_POINTS.length; i++) ctx2.lineTo(ROI_POINTS[i][0], ROI_POINTS[i][1]);
+            ctx2.closePath();
+            ctx2.stroke();
+        }
+        ROI_POINTS.forEach((p, i) => {
+            ctx2.fillStyle = '#22d3ee';
+            ctx2.beginPath();
+            ctx2.arc(p[0], p[1], 5, 0, Math.PI * 2);
+            ctx2.fill();
+            ctx2.fillStyle = '#fff';
+            ctx2.font = '14px sans-serif';
+            ctx2.fillText(i + 1, p[0] + 8, p[1] + 5);
+        });
+    }
+}
+
+function roiUndo() { ROI_POINTS.pop(); roiSetMsg('', false); roiRedraw(); }
+function roiClear() { ROI_POINTS = []; roiSetMsg('', false); roiRedraw(); }
+
+function roiLoadExisting() {
+    const row = getRow(activeRowId);
+    const roi = row ? operatorRoi(row.operator) : window.ACTIVE_ROI_POINTS;
+    if (roi && roi.length) {
+        ROI_POINTS = roi.map(p => [p[0], p[1]]);
+        roiSetMsg('Loaded ' + (row ? row.operator + "'s" : 'the') + ' current ROI', false);
+        roiRedraw();
+    } else {
+        roiSetMsg('No saved ROI to load', true);
+    }
+}
+
+async function roiSave() {
+    if (ROI_POINTS.length < 3) { roiSetMsg('Need at least 3 points', true); return; }
+    const row = getRow(activeRowId);
+    if (!row) { roiSetMsg('No active assignment - reopen ROI from the row', true); return; }
+    const pts = ROI_POINTS.map(p => [Math.round(p[0]), Math.round(p[1])]);
+    const ok = await saveOperatorRoi(row.operator, pts);
+    if (!ok) { roiSetMsg('Save failed - see the alert above', true); return; }
+    roiSetMsg(row.stage === 'live'
+        ? 'ROI saved — the live stream is now using it.'
+        : 'ROI saved.', false);
+    ROI_POINTS = [];
+    setTimeout(() => {
+        document.getElementById('roi-modal').classList.remove('open');
+        finishRoiForActiveRow();
+    }, 750);
+}
+
+// ---------------------------------------------------------------- config --
+
+async function loadConfig() {
+    try {
+        const r = await fetch('/config');
+        const c = await r.json();
+        var mp = String(c.model_path || '-').split(/[\\/]/).pop();
+        document.getElementById('model-badge').innerHTML = 'Model <b>' + mp + '</b>';
+        document.getElementById('roi-badge').innerHTML = 'Default ROI <b>' + (c.roi_points.length ? c.roi_points.length + ' pts' : 'none') + '</b>';
+        window.DEFAULT_ROI = c.roi_points || [];
+        window.CONFIG = c;
+    } catch (e) { console.warn('config', e); }
+    try {
+        const g = await (await fetch('/gpu')).json();
+        const gpu = g.available ? (g.gpu_name || 'GPU') : 'CPU';
+        document.getElementById('gpu-badge').innerHTML = 'Device <b>' + (g.runs_on || gpu) + '</b>';
+    } catch (e) { console.warn('gpu', e); }
+}
+
+// -------------------------------------------------------------- settings --
+
+function openSettingsModal() {
+    const c = window.CONFIG || {};
+    document.getElementById('set-model').value = c.model_path || '';
+    document.getElementById('set-conf').value = c.conf_threshold !== undefined ? c.conf_threshold : '';
+    document.getElementById('set-iou').value = c.iou_threshold !== undefined ? c.iou_threshold : '';
+    document.getElementById('set-device').value = c.device || 'auto';
+    document.getElementById('set-track').checked = c.tracking_enabled !== false;
+    const trackerVal = (c.tracker || 'bytetrack').toLowerCase();
+    document.getElementById('set-tracker').value = trackerVal.includes('byte') ? 'bytetrack' : trackerVal.split('.')[0];
+    document.getElementById('set-recover-frame').value = c.recover_frames !== undefined ? c.recover_frames : '';
+    document.getElementById('set-recover-dist').value = c.recover_dist !== undefined ? c.recover_dist : '';
+    document.getElementById('set-out-frames').value = c.out_frames !== undefined ? c.out_frames : '';
+    document.getElementById('set-confirm-frames').value = c.confirm_frames !== undefined ? c.confirm_frames : '';
+    document.getElementById('set-events').checked = c.events_enabled !== false;
+    document.getElementById('settings-msg').textContent = '';
+    document.getElementById('settings-modal').classList.add('open');
+}
+
+function closeSettingsModal() {
+    document.getElementById('settings-modal').classList.remove('open');
+}
+
+async function saveSettings() {
+    const body = {
+        model_path: document.getElementById('set-model').value.trim() || undefined,
+        conf_threshold: parseFloat(document.getElementById('set-conf').value),
+        iou_threshold: parseFloat(document.getElementById('set-iou').value),
+        device: document.getElementById('set-device').value,
+        tracking_enabled: document.getElementById('set-track').checked,
+        tracker: document.getElementById('set-tracker').value,
+        recover_frames: parseInt(document.getElementById('set-recover-frame').value, 10),
+        recover_dist: parseInt(document.getElementById('set-recover-dist').value, 10),
+        out_frames: parseInt(document.getElementById('set-out-frames').value, 10),
+        confirm_frames: parseInt(document.getElementById('set-confirm-frames').value, 10),
+        events_enabled: document.getElementById('set-events').checked,
+    };
+    for (const k in body) {
+        if (body[k] === undefined || (typeof body[k] === 'number' && isNaN(body[k]))) delete body[k];
+    }
+    const msgEl = document.getElementById('settings-msg');
+    msgEl.className = 'save-msg';
+    try {
+        const r = await fetch('/save-config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || 'save failed');
+        msgEl.textContent = 'Saved. Applies to the next job that goes live.';
+        await loadConfig();
+    } catch (e) {
+        msgEl.textContent = 'Error: ' + e.message;
+        msgEl.className = 'save-msg error';
+    }
+}
+
+// -------------------------------------------------------------- operators --
+
+let editingOperator = null;
+
+async function refreshOperators() {
+    try { LAST_OPERATORS = await (await fetch('/operators')).json(); } catch (e) { return; }
+    renderOperatorTable();
+}
+
+function renderOperatorTable() {
+    const body = document.getElementById('operator-table-body');
+    const empty = document.getElementById('operator-table-empty');
+    if (!body) return;
+    body.innerHTML = '';
+    empty.style.display = LAST_OPERATORS.length ? 'none' : '';
+    LAST_OPERATORS.forEach(op => {
+        const tr = document.createElement('tr');
+        const status = op.assignment
+            ? '<span style="color:var(--green);font-weight:700;">● LIVE — ' + op.assignment.label + '</span>'
+            : '<span style="color:var(--ink-soft);">idle</span>';
+        const nameCell = op.name.replace(/'/g, "\\'");
+        const roiText = (op.roi_points && op.roi_points.length)
+            ? op.roi_points.length + ' pts (own)'
+            : '<span style="color:var(--ink-soft);">using default</span>';
+        tr.innerHTML = `
+            <td>${op.name}</td>
+            <td>${op.machine_no || '–'}</td>
+            <td>${roiText}</td>
+            <td>${status}</td>
+            <td style="white-space:nowrap;text-align:right;">
+                <button class="btn btn--ghost btn--sm" onclick="editOperator('${nameCell}')">Edit</button>
+                <button class="btn btn--danger-ghost btn--sm" onclick="deleteOperatorRow('${nameCell}')">Delete</button>
+            </td>`;
+        body.appendChild(tr);
+    });
+}
+
+function resetOperatorForm() {
+    editingOperator = null;
+    document.getElementById('op-form-name').value = '';
+    document.getElementById('op-form-name').disabled = false;
+    document.getElementById('op-form-machine').value = '';
+    document.getElementById('op-form-pin').value = '';
+    document.getElementById('op-form-pin').placeholder = '••••';
+    document.getElementById('op-form-save').textContent = 'Add operator';
+    document.getElementById('operator-msg').textContent = '';
+}
+
+function editOperator(name) {
+    const op = LAST_OPERATORS.find(o => o.name === name);
+    if (!op) return;
+    editingOperator = name;
+    document.getElementById('op-form-name').value = op.name;
+    document.getElementById('op-form-name').disabled = true;
+    document.getElementById('op-form-machine').value = op.machine_no || '';
+    document.getElementById('op-form-pin').value = '';
+    document.getElementById('op-form-pin').placeholder = 'Leave blank to keep current PIN';
+    document.getElementById('op-form-save').textContent = 'Save changes';
+    document.getElementById('operator-msg').textContent = '';
+}
+
+async function deleteOperatorRow(name) {
+    if (!confirm('Remove operator "' + name + '"?')) return;
+    const msgEl = document.getElementById('operator-msg');
+    try {
+        const r = await fetch('/operators/' + encodeURIComponent(name), { method: 'DELETE' });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || 'failed');
+        if (editingOperator === name) resetOperatorForm();
+        refreshOperators();
+    } catch (e) {
+        msgEl.textContent = 'Error: ' + e.message;
+        msgEl.className = 'save-msg error';
+    }
+}
+
+function openOperatorModal() {
+    resetOperatorForm();
+    document.getElementById('operator-modal').classList.add('open');
+    refreshOperators();
+}
+
+function closeOperatorModal() {
+    document.getElementById('operator-modal').classList.remove('open');
+    renderRows(); // pick up any operator changes in the assignment dropdowns
+}
+
+async function saveOperatorForm() {
+    const name = document.getElementById('op-form-name').value.trim();
+    const machine_no = document.getElementById('op-form-machine').value.trim();
+    const pin = document.getElementById('op-form-pin').value.trim();
+    const msgEl = document.getElementById('operator-msg');
+    msgEl.className = 'save-msg';
+    if (!name) { msgEl.textContent = 'Enter a name first'; msgEl.className = 'save-msg error'; return; }
+    if (!editingOperator && !/^\d{4}$/.test(pin)) {
+        msgEl.textContent = 'PIN must be exactly 4 digits'; msgEl.className = 'save-msg error'; return;
+    }
+    if (pin && !/^\d{4}$/.test(pin)) {
+        msgEl.textContent = 'PIN must be exactly 4 digits'; msgEl.className = 'save-msg error'; return;
+    }
+    try {
+        const body = { name, machine_no };
+        if (pin) body.pin = pin;
+        const r = await fetch('/operators', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+        if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || 'failed');
+        msgEl.textContent = 'Saved ' + name;
+        resetOperatorForm();
+        refreshOperators();
+    } catch (e) {
+        msgEl.textContent = 'Error: ' + e.message;
+        msgEl.className = 'save-msg error';
+    }
+}
+
+// ------------------------------------------------------------------- init --
+
+async function initRows() {
+    let saved = [], jobs = [];
+    try { saved = await (await fetch('/assignments')).json(); } catch (e) {}
+    try { jobs = await (await fetch('/jobs')).json(); } catch (e) {}
+    const liveByOp = {};
+    jobs.filter(j => (j.status === 'running' || j.status === 'starting') && j.operator)
+        .forEach(j => { liveByOp[j.operator] = j; });
+
+    saved.forEach(a => {
+        const j = liveByOp[a.operator];
+        ROWS.push(newRow({
+            operator: a.operator,
+            mode: a.source_type,
+            sourceType: a.source_type,
+            sourceName: a.source_name || '',
+            rtspUrl: a.rtsp_url || '',
+            fileId: a.file_id || null,
+            fileName: a.file_name || '',
+            sourceLabel: a.source_type === 'rtsp' ? (a.rtsp_url || '') : (a.file_name || ''),
+            stage: j ? 'live' : 'configured',
+            jobId: j ? j.job_id : null,
+        }));
+        delete liveByOp[a.operator];
+    });
+
+    // A running job with no saved assignment (older data) - still show it.
+    Object.values(liveByOp).forEach(j => {
+        const isUpload = j.source_type === 'upload';
+        ROWS.push(newRow({
+            operator: j.operator, mode: j.source_type, sourceType: j.source_type,
+            sourceLabel: j.label, rtspUrl: isUpload ? '' : j.label,
+            fileId: isUpload ? j.label.replace(/\.[^.]+$/, '') : null,
+            stage: 'live', jobId: j.job_id,
+        }));
+    });
+
+    ROWS.push(newRow());
+    renderRows();
+}
+
+async function pollJobStatuses() {
+    let jobs = [];
+    try { jobs = await (await fetch('/jobs')).json(); } catch (e) { return; }
+    const byId = new Map(jobs.map(j => [j.job_id, j]));
+    let changed = false;
+    ROWS.forEach(row => {
+        if (row.stage === 'live' && row.jobId) {
+            const j = byId.get(row.jobId);
+            if (!j || (j.status !== 'running' && j.status !== 'starting')) {
+                row.stage = 'configured';
+                row.jobId = null;
+                changed = true;
+            }
+        }
+    });
+    if (changed) renderRows();
+}
+
+
+
+loadConfig();
+refreshOperators().then(initRows);
+setInterval(pollJobStatuses, 4000);
+</script>
+</body>
+</html>

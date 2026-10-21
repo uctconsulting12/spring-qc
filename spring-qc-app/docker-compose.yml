@@ -1,0 +1,69 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: spring_qc
+      POSTGRES_USER: spring_qc
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-spring_qc}
+    volumes:
+      - qc_pgdata:/var/lib/postgresql/data
+    ports:
+      # The DB doesn't need to be reachable from the shop-floor LAN, only the
+      # edge box itself - but binding Docker Desktop's WSL2 port proxy to
+      # 127.0.0.1 specifically is unreliable on Windows, so it's exposed on
+      # all interfaces and kept safe by NOT opening 5432 in the host firewall
+      # (see deploy/open-firewall.ps1 - it only allows 8001). On Linux, ufw's
+      # default-deny covers it the same way; open 5432 explicitly only if you
+      # need a remote pgAdmin/psql client.
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spring_qc -d spring_qc"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      args:
+        # CUDA 12.4 GPU build by default. For a CPU-only host, either set this
+        # to https://download.pytorch.org/whl/cpu or run:
+        #   docker compose build --build-arg TORCH_INDEX=https://download.pytorch.org/whl/cpu
+        TORCH_INDEX: ${TORCH_INDEX:-https://download.pytorch.org/whl/cu124}
+    environment:
+      DATABASE_URL: postgresql://spring_qc:${POSTGRES_PASSWORD:-spring_qc}@db:5432/spring_qc
+    ports:
+      # 0.0.0.0 on purpose - the admin PC and every operator HMI panel on the
+      # shop-floor LAN reach this over the network. Keep the edge box off any
+      # network with internet egress, or firewall 8001 to the floor subnet.
+      - "8001:8001"
+    volumes:
+      - ./config.yaml:/app/config.yaml   # keep Settings-panel + default-ROI edits
+      - ./model:/app/model               # swap weights without rebuilding the image
+      - qc_uploads:/app/uploads          # uploaded test videos
+      - qc_output:/app/Output            # captured spring frames
+      - qc_tmp:/app/_tmp                 # large-upload spool scratch
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+    # --- GPU ------------------------------------------------------------
+    # Requires the NVIDIA Container Toolkit on the host
+    # (verify: docker run --rm --gpus all nvidia/cuda:12.4.0-base-ubuntu22.04 nvidia-smi).
+    # On a host with no NVIDIA GPU, comment this block out and build with
+    # TORCH_INDEX=https://download.pytorch.org/whl/cpu (see build.args above).
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+volumes:
+  qc_pgdata:
+  qc_uploads:
+  qc_output:
+  qc_tmp:

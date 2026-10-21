@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Spring QC · Operator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="/static/app.css">
+<script>try{var t=localStorage.getItem('spring_qc_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<style>
+    :root {
+        color-scheme: light;
+        --bg: #eef1f4;
+        --panel: #ffffff;
+        --border: #d6dce2;
+        --ink: #1c2733;
+        --ink-soft: #5b6b7a;
+        --blue: #0a5fb4;
+        --blue-dark: #084a8c;
+        --green: #178a3e;
+        --green-dark: #106b30;
+        --green-bg: #e7f7ec;
+        --red: #c62828;
+        --red-dark: #a11f1f;
+        --red-bg: #fdeaea;
+        --amber: #b5750a;
+        --amber-bg: #fdf1dc;
+        --gray-bg: #e9edf1;
+        --panel-2: #f5f8fa;
+        --border-soft: #e6ecf1;
+        --ink-muted: #6b7f8d;
+        --shadow: 0 1px 3px rgba(20,30,40,0.06);
+    }
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+            color-scheme: dark;
+            --bg: #0f151b; --panel: #17212b; --border: #2a3946;
+            --ink: #eef3f7; --ink-soft: #a7b7c4;
+            --blue: #4a9eea; --blue-dark: #8ec4f5;
+            --green: #2fbf4f; --green-dark: #43d364; --green-bg: #123a1c;
+            --red: #f0645f; --red-dark: #f4837f; --red-bg: #3a1616;
+            --amber: #e0a030; --amber-bg: #3a2c10; --gray-bg: #1c2830;
+            --panel-2: #1c2830; --border-soft: #223140; --ink-muted: #7c8f9c;
+            --shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+    }
+    :root[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #0f151b; --panel: #17212b; --border: #2a3946;
+        --ink: #eef3f7; --ink-soft: #a7b7c4;
+        --blue: #4a9eea; --blue-dark: #8ec4f5;
+        --green: #2fbf4f; --green-dark: #43d364; --green-bg: #123a1c;
+        --red: #f0645f; --red-dark: #f4837f; --red-bg: #3a1616;
+        --amber: #e0a030; --amber-bg: #3a2c10; --gray-bg: #1c2830;
+        --panel-2: #1c2830; --border-soft: #223140; --ink-muted: #7c8f9c;
+        --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+        height: 100%;
+        font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        overflow: hidden;
+        user-select: none;
+    }
+
+    .app { height: 100vh; display: flex; flex-direction: column; }
+
+    /* ---- Top bar ---- */
+    header {
+        flex: 0 0 auto;
+        background: var(--panel);
+        border-bottom: 3px solid var(--blue);
+        padding: 10px clamp(12px, 3vw, 24px);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    header .actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    header .title { display: flex; align-items: center; gap: 10px; }
+    header .title .badge {
+        background: var(--blue);
+        color: #fff;
+        font-weight: 800;
+        font-size: clamp(11px, 1.6vw, 13px);
+        padding: 5px 10px;
+        border-radius: 6px;
+        letter-spacing: 0.06em;
+    }
+    header h1 { font-family: 'Archivo', sans-serif; font-size: clamp(15px, 2.4vw, 20px); font-weight: 800; color: var(--ink); }
+    .conn {
+        display: flex; align-items: center; gap: 8px;
+        font-size: clamp(11px, 1.8vw, 13px);
+        font-weight: 700;
+        padding: 6px 12px;
+        border-radius: 999px;
+        background: var(--gray-bg);
+        color: var(--ink-soft);
+    }
+    .conn .dot { width: 10px; height: 10px; border-radius: 50%; background: #9aa7b3; flex: 0 0 auto; }
+    .conn.live .dot { background: var(--green); box-shadow: 0 0 0 3px var(--green-bg); }
+    .conn.live { color: var(--green-dark); background: var(--green-bg); }
+    .conn.off .dot { background: #c0392b; }
+    .conn.off { color: var(--red-dark); background: var(--red-bg); }
+    header a.switch {
+        color: var(--ink-soft);
+        font-size: clamp(10px, 1.6vw, 12px);
+        text-decoration: none;
+        border: 1px solid var(--border);
+        padding: 7px 11px;
+        border-radius: 8px;
+    }
+    header a.switch:hover { background: var(--gray-bg); }
+    .theme-toggle {
+        min-height: 34px; min-width: 34px; border-radius: 8px; border: 1px solid var(--border);
+        background: var(--panel); color: var(--ink-soft); font-size: 15px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; padding: 0;
+    }
+    .theme-toggle:hover { background: var(--gray-bg); }
+
+    /* ---- Main content ---- */
+    main {
+        flex: 1 1 auto;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        gap: clamp(10px, 2vh, 20px);
+        padding: clamp(10px, 2vh, 20px) clamp(12px, 3vw, 28px);
+        overflow-y: auto;
+    }
+
+    .status-banner {
+        width: 100%;
+        max-width: 900px;
+        text-align: center;
+        font-family: 'Archivo', sans-serif;
+        font-size: clamp(14px, 2.6vw, 19px);
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 11px 16px;
+        border-radius: 12px;
+        background: var(--gray-bg);
+        color: var(--ink-soft);
+        border: 1px solid var(--border);
+    }
+    .status-banner.ready { background: var(--gray-bg); color: var(--ink-soft); border-color: var(--border); }
+    .status-banner.inspecting { background: var(--amber-bg); color: var(--amber); border-color: var(--amber); }
+    .status-banner.deciding { background: var(--red-bg); color: var(--red); border-color: var(--red); }
+    .status-banner.offline { background: var(--red-bg); color: var(--red-dark); border-color: var(--red); }
+
+    /* ---- Ring / timer ---- */
+    .ring-wrap {
+        position: relative;
+        width: clamp(150px, 26vh, 230px);
+        height: clamp(150px, 26vh, 230px);
+        flex: 0 0 auto;
+    }
+    /* The colored arc rotates on its own layer; the white face with the
+       digits sits on top and never rotates, so the numbers stay upright. */
+    .ring-spinner {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: conic-gradient(var(--border) 0deg, var(--border) 360deg);
+        transition: background 0.2s;
+    }
+    .ring-spinner.spinning {
+        background: conic-gradient(var(--amber) 0deg, #f6d9a3 120deg, var(--border) 120deg, var(--border) 360deg);
+        animation: spin 1.4s linear infinite;
+    }
+    .ring-spinner.solid-red {
+        background: conic-gradient(var(--red) 0deg, var(--red) 360deg);
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .ring-inner {
+        position: absolute;
+        top: 9%; left: 9%;
+        width: 82%; height: 82%;
+        border-radius: 50%;
+        background: var(--panel);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: inset 0 0 0 1px var(--border);
+    }
+    .ring-time {
+        font-variant-numeric: tabular-nums;
+        font-size: clamp(24px, 4.4vh, 38px);
+        font-weight: 800;
+        color: var(--ink);
+        letter-spacing: 0.02em;
+    }
+    .ring-label {
+        font-size: clamp(10px, 1.6vh, 12px);
+        font-weight: 700;
+        color: var(--ink-soft);
+        letter-spacing: 0.08em;
+        margin-top: 4px;
+    }
+
+    .sno-line { text-align: center; }
+    .sno-label { font-size: clamp(11px, 1.8vw, 12px); color: var(--ink-muted); font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+    .sno-value { font-family: 'IBM Plex Mono', monospace; font-size: clamp(30px, 6vh, 52px); font-weight: 600; color: var(--blue-dark); line-height: 1.1; }
+
+    .stat-row { display: flex; gap: clamp(10px, 2.4vw, 18px); justify-content: center; flex-wrap: wrap; width: 100%; max-width: 700px; }
+    .stat {
+        flex: 1 1 140px;
+        background: var(--panel-2);
+        border: 1px solid var(--border-soft);
+        border-radius: 12px;
+        padding: 12px 10px;
+        text-align: center;
+    }
+    .stat-label { font-size: clamp(10px, 1.6vw, 11px); color: var(--ink-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 700; }
+    .stat-value { font-family: 'IBM Plex Mono', monospace; font-size: clamp(16px, 3vh, 22px); font-weight: 600; color: var(--ink); margin-top: 4px; }
+
+    .frames {
+        display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+        max-width: 900px;
+    }
+    .frames img {
+        width: clamp(64px, 12vw, 96px); height: clamp(64px, 12vw, 96px);
+        object-fit: cover;
+        border-radius: 8px;
+        border: 2px solid var(--border);
+        background: #000;
+    }
+
+    .empty-hint { color: var(--ink-soft); font-size: clamp(12px, 2vw, 14px); text-align: center; max-width: 480px; }
+
+    /* ---- Fixed bottom action bar (industrial control panel) ---- */
+    .action-bar {
+        flex: 0 0 auto;
+        display: flex;
+        gap: clamp(8px, 2vw, 16px);
+        padding: clamp(10px, 2vh, 16px) clamp(12px, 3vw, 24px);
+        padding-bottom: max(clamp(10px, 2vh, 16px), env(safe-area-inset-bottom));
+        background: var(--panel);
+        border-top: 3px solid var(--border);
+    }
+    .decision-btn {
+        flex: 1;
+        min-height: clamp(76px, 14vh, 120px);
+        border: none;
+        border-radius: 14px;
+        font-size: clamp(16px, 3.2vw, 26px);
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        cursor: pointer;
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+        transition: transform 0.06s, box-shadow 0.06s, opacity 0.15s;
+    }
+    .decision-btn:active:not(:disabled) { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0,0,0,0.2); }
+    .decision-btn:disabled {
+        opacity: 1;
+        background: #dfe4e8 !important;
+        color: #9aa7b3;
+        box-shadow: none;
+        cursor: not-allowed;
+    }
+    .btn-ok { background: var(--green); }
+    .btn-bad { background: var(--red); }
+    .decision-btn.ready { animation: pulse 1.4s ease-in-out infinite; }
+
+    /* Deliberately smaller and quieter than the two decision buttons - skip
+       is an escape hatch (unclear images, unsure), not a third equal choice. */
+    .skip-btn {
+        flex: 0 0 clamp(60px, 11vw, 92px);
+        min-height: clamp(76px, 14vh, 120px);
+        border: 2px solid var(--border);
+        border-radius: 14px;
+        font-size: clamp(11px, 1.9vw, 13px);
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        cursor: pointer;
+        color: var(--ink-soft);
+        background: var(--gray-bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        box-shadow: 0 3px 0 rgba(0,0,0,0.08);
+        transition: transform 0.06s, box-shadow 0.06s, opacity 0.15s;
+    }
+    .skip-btn span.ic { font-size: clamp(16px, 3vw, 20px); }
+    .skip-btn:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.08); }
+    .skip-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    @keyframes pulse {
+        0%, 100% { box-shadow: 0 4px 0 rgba(0,0,0,0.2), 0 0 0 0 rgba(0,0,0,0.08); }
+        50% { box-shadow: 0 4px 0 rgba(0,0,0,0.2), 0 0 0 10px rgba(0,0,0,0); }
+    }
+
+    .confirm-toast {
+        position: fixed;
+        top: 70px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--panel);
+        border: 2px solid var(--green);
+        color: var(--green-dark);
+        font-weight: 700;
+        font-size: clamp(13px, 2.2vw, 16px);
+        padding: 10px 20px;
+        border-radius: 10px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s, transform 0.2s;
+        z-index: 20;
+    }
+    .confirm-toast.error { border-color: var(--red); color: var(--red-dark); }
+    .confirm-toast.show { opacity: 1; transform: translateX(-50%) translateY(6px); }
+
+    /* ---- Operator sign-in gate ---- */
+    .gate {
+        position: fixed; inset: 0;
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: clamp(16px, 3vh, 28px);
+        padding: clamp(16px, 4vw, 32px);
+        z-index: 100;
+    }
+    .gate-brand { font-family: 'Archivo', sans-serif; font-size: 13px; font-weight: 800; letter-spacing: 0.12em; color: var(--blue); }
+    .gate h2 { font-family: 'Archivo', sans-serif; font-size: clamp(18px, 3vw, 24px); font-weight: 800; }
+    .gate-sub { color: var(--ink-soft); font-size: clamp(12px, 2vw, 14px); margin-top: -12px; }
+    .gate-grid {
+        display: flex; flex-wrap: wrap; gap: 14px; justify-content: center;
+        max-width: 720px;
+    }
+    .gate-op-btn {
+        min-width: clamp(120px, 22vw, 180px);
+        min-height: 72px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-size: clamp(15px, 2.4vw, 18px);
+        font-weight: 700;
+        color: var(--ink);
+        cursor: pointer;
+        box-shadow: var(--shadow);
+        padding: 10px 16px;
+        position: relative;
+        transition: border-color 0.12s, background 0.12s;
+    }
+    .gate-op-btn:hover { border-color: var(--blue); }
+    .gate-op-btn:active { transform: translateY(1px); }
+    .gate-op-btn .assigned-dot {
+        position: absolute; top: 8px; right: 10px;
+        width: 9px; height: 9px; border-radius: 50%;
+        background: var(--green);
+    }
+    .gate-empty { color: var(--ink-soft); font-size: 14px; text-align: center; max-width: 320px; }
+
+    /* ---- PIN pad ---- */
+    .pin-target { font-size: clamp(16px, 2.6vw, 20px); font-weight: 800; color: var(--blue-dark); }
+    .pin-target .machine { color: var(--ink-soft); font-weight: 600; font-size: 0.7em; }
+    .pin-dots { display: flex; gap: 14px; }
+    .pin-dot {
+        width: 20px; height: 20px; border-radius: 50%;
+        border: 2px solid var(--border);
+        background: var(--panel);
+        transition: background 0.1s, border-color 0.1s;
+    }
+    .pin-dot.filled { background: var(--blue); border-color: var(--blue); }
+    .pin-dots.error .pin-dot { border-color: var(--red); background: var(--red-bg); }
+    .pin-error { color: var(--red-dark); font-weight: 700; font-size: 13px; min-height: 18px; }
+    .pin-pad {
+        display: grid;
+        grid-template-columns: repeat(3, clamp(64px, 16vw, 84px));
+        grid-auto-rows: clamp(56px, 12vh, 76px);
+        gap: 12px;
+    }
+    .pin-key {
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        font-size: clamp(20px, 3.6vw, 26px);
+        font-weight: 700;
+        color: var(--ink);
+        cursor: pointer;
+        box-shadow: var(--shadow);
+    }
+    .pin-key:active { transform: translateY(1px); box-shadow: none; }
+    .pin-key.wide { font-size: clamp(13px, 2vw, 15px); font-weight: 700; color: var(--ink-soft); }
+    .gate-back {
+        color: var(--ink-soft);
+        font-size: 13px;
+        text-decoration: underline;
+        cursor: pointer;
+        background: none;
+        border: none;
+    }
+</style>
+</head>
+<body>
+<div class="gate" id="gate">
+    <div id="gate-step-pick">
+        <div class="gate-brand" style="text-align:center;">SPRING QC — OPERATOR SIGN-IN</div>
+        <h2 style="text-align:center;margin-top:8px;">Who is working this station?</h2>
+        <div class="gate-sub" style="text-align:center;">Select your name from the configured operators</div>
+        <div class="gate-grid" id="gate-grid" style="margin-top:20px;"></div>
+        <div class="gate-empty" id="gate-empty" style="display:none;margin-top:16px;">No operators configured yet. Ask an admin to add one from the Admin dashboard.</div>
+    </div>
+
+    <div id="gate-step-pin" style="display:none;flex-direction:column;align-items:center;gap:18px;">
+        <div class="gate-brand">ENTER PIN</div>
+        <div class="pin-target" id="pin-target-name">-</div>
+        <div class="pin-dots" id="pin-dots">
+            <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+        </div>
+        <div class="pin-error" id="pin-error"></div>
+        <div class="pin-pad" id="pin-pad">
+            <button class="pin-key" onclick="pinPress('1')">1</button>
+            <button class="pin-key" onclick="pinPress('2')">2</button>
+            <button class="pin-key" onclick="pinPress('3')">3</button>
+            <button class="pin-key" onclick="pinPress('4')">4</button>
+            <button class="pin-key" onclick="pinPress('5')">5</button>
+            <button class="pin-key" onclick="pinPress('6')">6</button>
+            <button class="pin-key" onclick="pinPress('7')">7</button>
+            <button class="pin-key" onclick="pinPress('8')">8</button>
+            <button class="pin-key" onclick="pinPress('9')">9</button>
+            <button class="pin-key wide" onclick="pinClear()">CLEAR</button>
+            <button class="pin-key" onclick="pinPress('0')">0</button>
+            <button class="pin-key wide" onclick="pinBackspace()">⌫</button>
+        </div>
+        <button class="gate-back" onclick="gateBackToPick()">← Not you? Choose someone else</button>
+    </div>
+</div>
+
+<div class="app" id="app" style="display:none;">
+    <header>
+        <div class="title">
+            <span class="badge">OPERATOR</span>
+            <h1 id="operator-name">Spring QC Station</h1>
+        </div>
+        <div class="actions">
+            <span class="conn off" id="conn"><span class="dot"></span><span id="conn-text">Connecting...</span></span>
+            <a class="switch" href="#" onclick="changeOperator();return false;">Change operator</a>
+            <a class="switch" href="/">Switch view</a>
+            <button class="theme-toggle" id="themeToggle" title="Toggle dark mode">🌙</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="status-banner ready" id="status-banner">NO CAMERA RUNNING</div>
+
+        <div class="ring-wrap">
+            <div class="ring-spinner" id="ring"></div>
+            <div class="ring-inner">
+                <div class="ring-time" id="ring-time">00:00.0</div>
+                <div class="ring-label" id="ring-label">READY</div>
+            </div>
+        </div>
+
+        <div class="sno-line" id="sno-line" style="display:none;">
+            <div class="sno-label">SPRING S.NO</div>
+            <div class="sno-value" id="sno-value">-</div>
+        </div>
+
+        <div class="stat-row" id="stat-row" style="display:none;">
+            <div class="stat"><div class="stat-label">IN</div><div class="stat-value" id="stat-in">-</div></div>
+            <div class="stat"><div class="stat-label">OUT</div><div class="stat-value" id="stat-out">-</div></div>
+            <div class="stat"><div class="stat-label">Duration</div><div class="stat-value" id="stat-dur">-</div></div>
+        </div>
+
+        <div class="frames" id="frames"></div>
+
+        <div class="empty-hint" id="empty-hint">Waiting for an admin to go live on a camera or test video.</div>
+    </main>
+
+    <div class="action-bar">
+        <button class="decision-btn btn-ok" id="btn-ok" onclick="answer('ok')" disabled>NOT DEFECTIVE</button>
+        <button class="decision-btn btn-bad" id="btn-bad" onclick="answer('defective')" disabled>DEFECTIVE</button>
+        <button class="skip-btn" id="btn-skip" onclick="answer('unknown')" disabled>Skip</button>
+    </div>
+</div>
+
+<div class="confirm-toast" id="toast"></div>
+
+<script>
+let ws = null;
+let currentJobId = null;
+let myOperator = null;
+const decisionQueue = [];
+let current = null;    // spring currently awaiting a decision
+let inspecting = null; // {s_no, serverElapsed, receivedAtMs}
+let locked = false;
+let connected = false;
+let tickHandle = null;
+
+const OPERATOR_KEY = 'spring_qc_operator';
+const gateEl = document.getElementById('gate');
+const appEl = document.getElementById('app');
+const gateGrid = document.getElementById('gate-grid');
+const gateEmpty = document.getElementById('gate-empty');
+const operatorNameEl = document.getElementById('operator-name');
+const stepPickEl = document.getElementById('gate-step-pick');
+const stepPinEl = document.getElementById('gate-step-pin');
+
+let pinEntry = '';
+let pinTargetName = null;
+
+async function loadPickStep() {
+    gateGrid.innerHTML = '';
+    let operators = [];
+    try { operators = await (await fetch('/operators')).json(); } catch (e) { /* ignore */ }
+    gateEmpty.style.display = operators.length ? 'none' : '';
+    operators.forEach(op => {
+        const btn = document.createElement('button');
+        btn.className = 'gate-op-btn';
+        btn.innerHTML = op.name + (op.machine_no
+            ? '<div style="font-size:0.6em;color:var(--ink-soft);font-weight:600;margin-top:4px;">' + op.machine_no + '</div>'
+            : '');
+        if (op.assignment) {
+            const dot = document.createElement('span');
+            dot.className = 'assigned-dot';
+            dot.title = 'Has a live job assigned';
+            btn.appendChild(dot);
+        }
+        btn.onclick = () => gateChoosePin(op.name);
+        gateGrid.appendChild(btn);
+    });
+    return operators;
+}
+
+function gateChoosePin(name) {
+    pinTargetName = name;
+    pinEntry = '';
+    document.getElementById('pin-target-name').textContent = name;
+    document.getElementById('pin-error').textContent = '';
+    document.getElementById('pin-dots').classList.remove('error');
+    updatePinDots();
+    stepPickEl.style.display = 'none';
+    stepPinEl.style.display = 'flex';
+}
+
+function gateBackToPick() {
+    pinTargetName = null;
+    pinEntry = '';
+    stepPinEl.style.display = 'none';
+    stepPickEl.style.display = '';
+}
+
+function updatePinDots() {
+    document.querySelectorAll('#pin-dots .pin-dot').forEach((d, i) => d.classList.toggle('filled', i < pinEntry.length));
+}
+
+function pinPress(digit) {
+    if (pinEntry.length >= 4) return;
+    pinEntry += digit;
+    updatePinDots();
+    if (pinEntry.length === 4) submitPin();
+}
+
+function pinClear() {
+    pinEntry = '';
+    updatePinDots();
+    document.getElementById('pin-error').textContent = '';
+    document.getElementById('pin-dots').classList.remove('error');
+}
+
+function pinBackspace() {
+    pinEntry = pinEntry.slice(0, -1);
+    updatePinDots();
+}
+
+async function submitPin() {
+    const errEl = document.getElementById('pin-error');
+    try {
+        const r = await fetch('/operators/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: pinTargetName, pin: pinEntry }),
+        });
+        if (!r.ok) {
+            const err = await r.json().catch(() => ({}));
+            errEl.textContent = err.detail || 'Incorrect PIN';
+            document.getElementById('pin-dots').classList.add('error');
+            setTimeout(() => {
+                pinEntry = '';
+                updatePinDots();
+                document.getElementById('pin-dots').classList.remove('error');
+                errEl.textContent = '';
+            }, 900);
+            return;
+        }
+        selectOperator(pinTargetName);
+    } catch (e) {
+        errEl.textContent = 'Network error, try again';
+    }
+}
+
+function selectOperator(name) {
+    myOperator = name;
+    localStorage.setItem(OPERATOR_KEY, name);
+    operatorNameEl.textContent = name;
+    gateEl.style.display = 'none';
+    appEl.style.display = '';
+    render();
+    setButtons();
+    findRunningJob();
+}
+
+function changeOperator() {
+    if (ws) { ws.close(); ws = null; }
+    currentJobId = null;
+    connected = false;
+    inspecting = null;
+    current = null;
+    decisionQueue.length = 0;
+    localStorage.removeItem(OPERATOR_KEY);
+    appEl.style.display = 'none';
+    gateEl.style.display = '';
+    gateBackToPick();
+    loadPickStep();
+}
+
+async function initOperatorGate() {
+    const saved = localStorage.getItem(OPERATOR_KEY);
+    const operators = await loadPickStep();
+    if (saved && operators.some(o => o.name === saved)) {
+        // Convenience: jump straight to this station's usual operator's PIN
+        // screen, but a PIN is still required every time - "Not you?" backs out.
+        gateChoosePin(saved);
+    } else {
+        stepPickEl.style.display = '';
+        stepPinEl.style.display = 'none';
+    }
+}
+
+const connEl = document.getElementById('conn');
+const connTextEl = document.getElementById('conn-text');
+const statusBanner = document.getElementById('status-banner');
+const ringEl = document.getElementById('ring');
+const ringTime = document.getElementById('ring-time');
+const ringLabel = document.getElementById('ring-label');
+const snoLine = document.getElementById('sno-line');
+const snoValue = document.getElementById('sno-value');
+const statRow = document.getElementById('stat-row');
+const statIn = document.getElementById('stat-in');
+const statOut = document.getElementById('stat-out');
+const statDur = document.getElementById('stat-dur');
+const framesEl = document.getElementById('frames');
+const emptyHint = document.getElementById('empty-hint');
+const btnOk = document.getElementById('btn-ok');
+const btnBad = document.getElementById('btn-bad');
+const btnSkip = document.getElementById('btn-skip');
+const toast = document.getElementById('toast');
+
+function fmtStat(v) {
+    if (v === undefined || v === null) return '-';
+    return Number(v).toFixed(2) + 's';
+}
+
+function fmtClock(sec) {
+    sec = Math.max(0, sec || 0);
+    const m = Math.floor(sec / 60);
+    const s = sec - m * 60;
+    return String(m).padStart(2, '0') + ':' + s.toFixed(1).padStart(4, '0');
+}
+
+function setConn(text, cls) {
+    connTextEl.textContent = text;
+    connEl.className = 'conn ' + cls;
+}
+
+function startTick() {
+    if (tickHandle) return;
+    tickHandle = setInterval(() => {
+        if (!inspecting) return;
+        const elapsed = inspecting.serverElapsed + (Date.now() - inspecting.receivedAtMs) / 1000;
+        ringTime.textContent = fmtClock(elapsed);
+    }, 100);
+}
+
+function stopTick() {
+    if (tickHandle) { clearInterval(tickHandle); tickHandle = null; }
+}
+
+function render() {
+    // Connection / offline state
+    if (!connected) {
+        statusBanner.textContent = 'NO CAMERA ASSIGNED';
+        statusBanner.className = 'status-banner offline';
+        ringEl.className = 'ring-spinner';
+        ringTime.textContent = '00:00.0';
+        ringLabel.textContent = 'OFFLINE';
+        snoLine.style.display = 'none';
+        statRow.style.display = 'none';
+        framesEl.innerHTML = '';
+        emptyHint.style.display = '';
+        emptyHint.textContent = 'Waiting for an admin to assign a camera or test video to ' + (myOperator || 'this station') + '.';
+        return;
+    }
+
+    if (current) {
+        // A spring is out and needs a decision.
+        statusBanner.textContent = 'SPRING OUT — AWAITING YOUR DECISION';
+        statusBanner.className = 'status-banner deciding';
+        ringEl.className = 'ring-spinner solid-red';
+        ringTime.textContent = fmtClock(current.duration_sec);
+        ringLabel.textContent = 'DURATION';
+        snoLine.style.display = '';
+        snoValue.textContent = current.s_no;
+        statRow.style.display = 'flex';
+        statIn.textContent = fmtStat(current.in_time_sec);
+        statOut.textContent = fmtStat(current.out_time_sec);
+        statDur.textContent = fmtStat(current.duration_sec);
+        emptyHint.style.display = 'none';
+        return;
+    }
+
+    if (inspecting) {
+        statusBanner.textContent = 'INSPECTING — SPRING IN PROGRESS';
+        statusBanner.className = 'status-banner inspecting';
+        ringEl.className = 'ring-spinner spinning';
+        ringLabel.textContent = 'PROCESSING';
+        snoLine.style.display = '';
+        snoValue.textContent = inspecting.s_no;
+        statRow.style.display = 'none';
+        framesEl.innerHTML = '';
+        emptyHint.style.display = 'none';
+        startTick();
+        return;
+    }
+
+    // Idle: connected, nothing loaded
+    stopTick();
+    statusBanner.textContent = 'NO SPRING LOADED';
+    statusBanner.className = 'status-banner ready';
+    ringEl.className = 'ring-spinner';
+    ringTime.textContent = '00:00.0';
+    ringLabel.textContent = 'READY';
+    snoLine.style.display = 'none';
+    statRow.style.display = 'none';
+    framesEl.innerHTML = '';
+    emptyHint.style.display = '';
+    emptyHint.textContent = 'Line is live. Waiting for the next spring to load.';
+}
+
+function setButtons() {
+    const enabled = !!current && !locked;
+    btnOk.disabled = !enabled;
+    btnBad.disabled = !enabled;
+    btnSkip.disabled = !enabled;
+    btnOk.classList.toggle('ready', enabled);
+    btnBad.classList.toggle('ready', enabled);
+}
+
+async function findRunningJob() {
+    if (currentJobId || !myOperator) return;
+    try {
+        const jobs = await (await fetch('/jobs?operator=' + encodeURIComponent(myOperator))).json();
+        const running = jobs.find(j => j.status === 'running' || j.status === 'starting');
+        if (running) {
+            currentJobId = running.job_id;
+            connectWs(currentJobId);
+        }
+    } catch (e) { /* ignore, retry on next poll */ }
+}
+
+function connectWs(jobId) {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(`${proto}://${location.host}/ws/${jobId}`);
+    setConn('Connecting...', 'off');
+    ws.onopen = () => { setConn('Live', 'live'); connected = true; render(); };
+    ws.onmessage = (ev) => {
+        if (typeof ev.data !== 'string') return; // ignore video frames entirely
+        const msg = JSON.parse(ev.data);
+        if (msg.type === 'event') handleEvent(msg);
+        else if (msg.type === 'live') handleLive(msg.live || {});
+        else if (msg.type === 'completed' || msg.type === 'error') {
+            setConn(msg.type === 'error' ? 'Error' : 'Camera stopped', 'off');
+            connected = false;
+            inspecting = null;
+            render();
+            setButtons();
+            currentJobId = null;
+            ws = null;
+        }
+    };
+    ws.onerror = () => setConn('Connection error', 'off');
+    ws.onclose = () => {
+        if (currentJobId === jobId) {
+            setConn('Disconnected', 'off');
+            connected = false;
+            inspecting = null;
+            render();
+            setButtons();
+            currentJobId = null;
+        }
+        ws = null;
+    };
+}
+
+function handleLive(liveObj) {
+    const keys = Object.keys(liveObj);
+    if (!keys.length) return;
+    const sNo = Number(keys[0]);
+    inspecting = { s_no: sNo, serverElapsed: liveObj[keys[0]], receivedAtMs: Date.now() };
+    if (!current) render();
+}
+
+function handleEvent(ev) {
+    if (ev.out_time_sec === undefined) {
+        if (ev.in_time_sec !== undefined) {
+            inspecting = { s_no: ev.s_no, serverElapsed: 0, receivedAtMs: Date.now() };
+            if (!current) render();
+        }
+        return;
+    }
+    if (inspecting && inspecting.s_no === ev.s_no) inspecting = null;
+    if (!ev.frames_b64 || !ev.frames_b64.length) { if (!current) render(); return; }
+    decisionQueue.push({
+        s_no: ev.s_no,
+        in_time_sec: ev.in_time_sec,
+        out_time_sec: ev.out_time_sec,
+        duration_sec: ev.duration_sec,
+        frames_b64: ev.frames_b64,
+    });
+    maybeShowNext();
+}
+
+function maybeShowNext() {
+    if (current || !decisionQueue.length) return;
+    current = decisionQueue.shift();
+    locked = false;
+    framesEl.innerHTML = '';
+    current.frames_b64.forEach(b64 => {
+        const img = document.createElement('img');
+        img.src = 'data:image/jpeg;base64,' + b64;
+        framesEl.appendChild(img);
+    });
+    render();
+    setButtons();
+}
+
+function showToast(text, isError) {
+    toast.textContent = text;
+    toast.className = 'confirm-toast' + (isError ? ' error' : '') + ' show';
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.remove('show'), 2200);
+}
+
+async function answer(defect) {
+    if (!current || locked) return;
+    locked = true;
+    setButtons();
+    const sNo = current.s_no;
+    try {
+        const r = await fetch('/save-defect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ job_id: currentJobId, s_no: sNo, defect }),
+        });
+        if (!r.ok) {
+            const err = await r.json().catch(() => ({}));
+            showToast('Error: ' + (err.detail || r.statusText), true);
+            locked = false;
+            setButtons();
+            return;
+        }
+        const label = defect === 'ok' ? 'NOT DEFECTIVE' : (defect === 'defective' ? 'DEFECTIVE' : 'SKIPPED');
+        showToast('S.No ' + sNo + (defect === 'unknown' ? ' skipped.' : ' recorded as ' + label + '.'), false);
+    } catch (e) {
+        showToast('Error: ' + e.message, true);
+        locked = false;
+        setButtons();
+        return;
+    }
+    setTimeout(() => {
+        current = null;
+        render();
+        setButtons();
+        maybeShowNext();
+    }, 700);
+}
+
+(function () {
+    var KEY = 'spring_qc_theme';
+    var btn = document.getElementById('themeToggle');
+    function apply(t) {
+        if (t === 'dark' || t === 'light') document.documentElement.setAttribute('data-theme', t);
+        else document.documentElement.removeAttribute('data-theme');
+        var dark = t === 'dark' || (!t && matchMedia('(prefers-color-scheme: dark)').matches);
+        btn.textContent = dark ? '☀️' : '🌙';
+    }
+    btn.addEventListener('click', function () {
+        var cur = document.documentElement.getAttribute('data-theme');
+        var dark = cur === 'dark' || (!cur && matchMedia('(prefers-color-scheme: dark)').matches);
+        var next = dark ? 'light' : 'dark';
+        try { localStorage.setItem(KEY, next); } catch (e) {}
+        apply(next);
+    });
+    try { apply(localStorage.getItem(KEY)); } catch (e) { apply(null); }
+})();
+
+render();
+setButtons();
+initOperatorGate();
+setInterval(findRunningJob, 3000);
+</script>
+</body>
+</html>

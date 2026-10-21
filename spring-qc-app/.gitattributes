@@ -1,0 +1,9 @@
+# Normalize line endings for text; leave binaries alone.
+* text=auto eol=lf
+*.bat text eol=crlf
+
+# Model weights / data blobs — treat as binary.
+*.pt binary
+*.pth binary
+*.onnx binary
+*.mp4 binary

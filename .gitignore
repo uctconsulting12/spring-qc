@@ -1,0 +1,35 @@
+# Spring QC — repo-root .gitignore
+# Covers everything directly under D:\SPRING that shouldn't be committed.
+# spring-qc-app\ and spring-qc-exe\ have their own, more specific .gitignore
+# files for their internals — this one handles the top level.
+
+# --- Old / superseded, not part of the product ---
+venv/
+trash/
+
+# --- Large media, not source ---
+Videos/
+
+# --- Scratch build folders used to generate docs (HTML->PDF / docx-js) ---
+.docx_build/
+.handover_pdf_build/
+
+# --- Build-session debug logs left behind while driving PyInstaller by hand ---
+spring-qc-exe/*.log
+
+# --- Node / Python artifacts anywhere under here ---
+node_modules/
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# --- AI tooling / editor / OS cruft ---
+.claude/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Secrets ---
+.env
+*.env.local

@@ -1,0 +1,1242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Spring QC - Reports</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<link rel="stylesheet" href="/static/app.css">
+<script>try{var t=localStorage.getItem('spring_qc_theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<style>
+    :root {
+        color-scheme: light;
+        --bg: #eef1f4;
+        --panel: #ffffff;
+        --panel-2: #f5f8fa;
+        --border: #d6dce2;
+        --border-soft: #e6ecf1;
+        --ink: #1c2733;
+        --ink-soft: #5b6b7a;
+        --ink-muted: #6b7f8d;
+        --blue: #0a5fb4;
+        --blue-dark: #084a8c;
+        --blue-bg: #e7f1fb;
+        --green: #178a3e;
+        --green-bg: #e7f7ec;
+        --red: #c62828;
+        --red-bg: #fdeaea;
+        --amber: #b5750a;
+        --amber-bg: #fdf1dc;
+        --gray-bg: #e9edf1;
+        --grid: #e7edf1;
+        --shadow: 0 1px 3px rgba(20,30,40,0.06);
+        --tooltip-bg: #1c2733;
+        --tooltip-ink: #ffffff;
+    }
+    @media (prefers-color-scheme: dark) {
+        :root:not([data-theme="light"]) {
+            color-scheme: dark;
+            --bg: #0f151b;
+            --panel: #17212b;
+            --panel-2: #1c2830;
+            --border: #2a3946;
+            --border-soft: #223140;
+            --ink: #eef3f7;
+            --ink-soft: #a7b7c4;
+            --ink-muted: #7c8f9c;
+            --blue: #4a9eea;
+            --blue-dark: #8ec4f5;
+            --blue-bg: #16283a;
+            --green: #2fbf4f;
+            --green-bg: #123a1c;
+            --red: #f0645f;
+            --red-bg: #3a1616;
+            --amber: #e0a030;
+            --amber-bg: #3a2c10;
+            --gray-bg: #1c2830;
+            --grid: #24323d;
+            --shadow: 0 1px 3px rgba(0,0,0,0.4);
+        }
+    }
+    :root[data-theme="dark"] {
+        color-scheme: dark;
+        --bg: #0f151b;
+        --panel: #17212b;
+        --panel-2: #1c2830;
+        --border: #2a3946;
+        --border-soft: #223140;
+        --ink: #eef3f7;
+        --ink-soft: #a7b7c4;
+        --ink-muted: #7c8f9c;
+        --blue: #4a9eea;
+        --blue-dark: #8ec4f5;
+        --blue-bg: #16283a;
+        --green: #2fbf4f;
+        --green-bg: #123a1c;
+        --red: #f0645f;
+        --red-bg: #3a1616;
+        --amber: #e0a030;
+        --amber-bg: #3a2c10;
+        --gray-bg: #1c2830;
+        --grid: #24323d;
+        --shadow: 0 1px 3px rgba(0,0,0,0.4);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+        font-family: 'IBM Plex Sans', 'Segoe UI', Roboto, Arial, sans-serif;
+        background: var(--bg);
+        color: var(--ink);
+        min-height: 100vh;
+    }
+    .mono { font-family: 'IBM Plex Mono', ui-monospace, monospace; }
+    .num { font-variant-numeric: tabular-nums; }
+
+    header {
+        background: var(--panel);
+        padding: 14px clamp(14px, 3vw, 24px);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 3px solid var(--blue);
+        flex-wrap: wrap;
+        gap: 10px;
+        position: sticky; top: 0; z-index: 20;
+    }
+    header .title { display: flex; align-items: center; gap: 10px; }
+    header .title .tag {
+        background: var(--blue); color: #fff; font-weight: 800; font-size: 12px;
+        padding: 5px 10px; border-radius: 6px; letter-spacing: 0.06em;
+    }
+    header h1 { font-family: 'Archivo', sans-serif; font-size: clamp(16px, 2.2vw, 20px); font-weight: 800; }
+    header a {
+        color: var(--ink-soft); font-size: 13px; text-decoration: none;
+        border: 1px solid var(--border); padding: 8px 12px; border-radius: 8px;
+    }
+    header a:hover { background: var(--gray-bg); }
+
+    .filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .theme-toggle {
+        min-height: 36px; min-width: 36px; border-radius: 8px; border: 1px solid var(--border);
+        background: var(--panel); color: var(--ink-soft); font-size: 16px; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; padding: 0;
+    }
+    .theme-toggle:hover { background: var(--gray-bg); }
+
+    .segmented { display: flex; background: var(--gray-bg); border: 1px solid var(--border); border-radius: 9px; padding: 3px; }
+    .segmented button {
+        appearance: none; border: none; background: transparent; color: var(--ink-soft);
+        font: inherit; font-size: 13px; font-weight: 600; padding: 6px 13px; border-radius: 6px; cursor: pointer;
+    }
+    .segmented button.active { background: var(--panel); color: var(--ink); box-shadow: var(--shadow); }
+    button:focus-visible, select:focus-visible, .chip:focus-visible, input:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+    .section-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .date-filter { display: flex; align-items: center; gap: 8px; }
+    .date-filter input[type="date"] {
+        min-height: 34px; border-radius: 8px; border: 1px solid var(--border);
+        background: var(--panel); color: var(--ink); padding: 0 10px; font: inherit; font-size: 13px;
+    }
+    .date-filter button.ghost-btn {
+        min-height: 34px; border-radius: 8px; border: none; background: var(--gray-bg); color: var(--ink-soft);
+        font: inherit; font-size: 13px; font-weight: 700; padding: 0 12px; cursor: pointer;
+    }
+    .recent-op-select {
+        min-height: 34px; border-radius: 8px; border: 1px solid var(--border);
+        background: var(--panel); color: var(--ink); padding: 0 10px; font: inherit; font-size: 13px; font-weight: 600;
+    }
+    .export-btn {
+        min-height: 34px; border-radius: 8px; border: 1px solid var(--blue);
+        background: var(--blue); color: #fff; padding: 0 14px; font: inherit; font-size: 13px;
+        font-weight: 700; cursor: pointer;
+    }
+    .export-btn:hover { background: var(--blue-dark); border-color: var(--blue-dark); }
+    .export-btn:disabled { opacity: 0.6; cursor: default; }
+    .xform { display: flex; flex-direction: column; gap: 16px; }
+    .xrow { display: flex; flex-direction: column; gap: 6px; }
+    .xrow > label.lbl { font-size: 12px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.4px; }
+    .xrow select, .xrow input[type="date"], .xrow input[type="number"] {
+        min-height: 36px; border-radius: 8px; border: 1px solid var(--border);
+        background: var(--panel); color: var(--ink); padding: 0 10px; font: inherit; font-size: 14px;
+    }
+    .xradio { display: flex; gap: 8px; flex-wrap: wrap; }
+    .xradio label {
+        display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600;
+        border: 1px solid var(--border); border-radius: 8px; padding: 7px 10px; cursor: pointer;
+    }
+    .xradio label:has(input:checked) { border-color: var(--blue); background: var(--blue-bg); color: var(--blue-dark); }
+    .xcheck { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; }
+    .xnote { font-size: 12px; color: var(--ink-muted); }
+    .xactions { display: flex; justify-content: flex-end; gap: 10px; padding-top: 4px; }
+    .xactions .go {
+        border: none; border-radius: 8px; background: var(--blue); color: #fff;
+        padding: 10px 18px; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    .xactions .go:disabled { opacity: 0.6; cursor: default; }
+    .xactions .cancel {
+        border: 1px solid var(--border); border-radius: 8px; background: var(--panel); color: var(--ink-soft);
+        padding: 10px 16px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+
+    main { padding: 24px clamp(16px, 4vw, 56px) 48px; max-width: 1760px; margin: 0 auto; }
+
+    .section { margin-top: 36px; }
+    .section:first-child { margin-top: 4px; }
+    .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+    .section-head h2 {
+        font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 14px;
+        text-transform: uppercase; letter-spacing: 0.06em; margin: 0;
+    }
+    .section-head .desc { font-size: 13px; color: var(--ink-soft); }
+    .table-toggle {
+        font-size: 12.5px; font-weight: 600; color: var(--blue-dark); background: none; border: none; cursor: pointer;
+        padding: 0; text-decoration: underline; text-underline-offset: 2px;
+    }
+
+    .kpis { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+    .kpi {
+        background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px;
+        box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 8px; min-width: 0;
+    }
+    .kpi .label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); }
+    .kpi .value { font-family: 'IBM Plex Mono', monospace; font-size: 27px; font-weight: 600; letter-spacing: -0.01em; }
+    .kpi .delta { font-size: 12.5px; font-weight: 600; }
+    .kpi .delta.up { color: var(--green); }
+    .kpi .delta.down { color: var(--red); }
+    .kpi .delta .base { color: var(--ink-muted); font-weight: 500; }
+
+    .grid-2 { display: grid; grid-template-columns: 1.35fr 1fr; gap: 16px; align-items: start; }
+    .panel {
+        background: var(--panel); border: 1px solid var(--border); border-radius: 14px;
+        padding: 18px 20px 16px; box-shadow: var(--shadow);
+    }
+    .panel h3 { margin: 0 0 2px; font-family: 'Archivo', sans-serif; font-size: 14px; font-weight: 700; }
+    .panel .panel-sub { font-size: 12.5px; color: var(--ink-soft); margin-bottom: 12px; }
+
+    .legend { display: flex; gap: 16px; flex-wrap: wrap; margin: 2px 0 12px; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); }
+    .legend-swatch { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; }
+    .legend-item.good .legend-swatch { background: var(--green); }
+    .legend-item.critical .legend-swatch { background: var(--red); }
+
+    .chart-svg { width: 100%; height: auto; overflow: visible; }
+    .axis-label { font-family: 'IBM Plex Mono', monospace; font-size: 10.5px; fill: var(--ink-muted); }
+    .gridline { stroke: var(--grid); stroke-width: 1; }
+    .bar-ok { fill: var(--green); }
+    .bar-critical { fill: var(--red); }
+    .bar-hit { fill: transparent; cursor: pointer; }
+
+    .tooltip {
+        position: fixed; pointer-events: none; z-index: 60;
+        background: var(--tooltip-bg); color: var(--tooltip-ink);
+        font-size: 12px; line-height: 1.5; padding: 8px 11px; border-radius: 9px;
+        box-shadow: 0 10px 30px -8px rgba(0,0,0,0.45);
+        opacity: 0; transform: translate(-50%, -100%) translateY(-10px);
+        transition: opacity 0.08s ease; white-space: nowrap;
+    }
+    .tooltip.show { opacity: 1; }
+    .tooltip b { font-family: 'IBM Plex Mono', monospace; }
+    .tooltip .row { display: flex; gap: 10px; justify-content: space-between; }
+    .tooltip .row .k { color: rgba(255,255,255,0.6); }
+
+    .chart-table { display: none; width: 100%; border-collapse: collapse; font-size: 12.5px; margin-top: 10px; }
+    .chart-table.show { display: table; }
+    .chart-table th, .chart-table td { text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--border-soft); }
+    .chart-table th:first-child, .chart-table td:first-child { text-align: left; }
+    .chart-table th { color: var(--ink-muted); font-weight: 600; text-transform: uppercase; font-size: 10.5px; letter-spacing: 0.04em; }
+    .chart-table td.num, .chart-table th.num { font-family: 'IBM Plex Mono', monospace; }
+
+    .chart-empty { padding: 40px 0; text-align: center; color: var(--ink-muted); font-size: 13px; }
+
+    .op-pills { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
+    .chip {
+        appearance: none; border: 1px solid var(--border); background: var(--panel); color: var(--ink-soft);
+        font: inherit; font-size: 13px; font-weight: 600; padding: 8px 14px 8px 10px; border-radius: 999px; cursor: pointer;
+        display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow);
+    }
+    .chip .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ink-muted); flex: 0 0 auto; }
+    .chip.active { background: var(--blue-bg); border-color: var(--blue); color: var(--blue-dark); }
+    .chip.active .dot { background: var(--blue); }
+    .chip .mn { color: var(--ink-muted); font-weight: 500; font-size: 12px; }
+    .chip.active .mn { color: var(--blue-dark); opacity: 0.75; }
+
+    .drill { display: grid; grid-template-columns: 1fr 1.6fr; gap: 16px; }
+    .drill-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-content: start; }
+    .stat-tile { background: var(--panel-2); border: 1px solid var(--border-soft); border-radius: 12px; padding: 12px 14px; }
+    .stat-tile .l { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); margin-bottom: 5px; }
+    .stat-tile .v { font-family: 'IBM Plex Mono', monospace; font-size: 19px; font-weight: 600; }
+    .stat-tile .v.good { color: var(--green); }
+    .stat-tile .v.critical { color: var(--red); }
+
+    .sparkwrap { background: var(--panel-2); border: 1px solid var(--border-soft); border-radius: 12px; padding: 14px 16px; }
+    .sparkwrap .sp-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; }
+    .sparkwrap .sp-head .t { font-size: 12px; font-weight: 700; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+    .sparkwrap .sp-head .n { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--ink-muted); }
+
+    .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; background: var(--panel); box-shadow: var(--shadow); }
+    table.records { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 820px; }
+    table.records thead th {
+        text-align: left; padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase;
+        letter-spacing: 0.05em; color: var(--ink-muted); border-bottom: 1px solid var(--border); white-space: nowrap;
+    }
+    table.records tbody td { padding: 11px 16px; border-bottom: 1px solid var(--border-soft); white-space: nowrap; }
+    table.records tbody tr:last-child td { border-bottom: none; }
+    table.records tbody tr:hover { background: var(--panel-2); cursor: pointer; }
+    .pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px 3px 7px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .pill.ok { background: var(--green-bg); color: var(--green); }
+    .pill.defective { background: var(--red-bg); color: var(--red); }
+    .pill.unknown { background: var(--gray-bg); color: var(--ink-soft); }
+    .empty { text-align: center; color: var(--ink-soft); padding: 30px 0; font-size: 13px; }
+    .op-name-link { color: var(--blue-dark); font-weight: 700; text-decoration: underline; cursor: pointer; }
+
+    .thumb-row { display: flex; gap: 4px; }
+    .thumb-row img { width: 34px; height: 34px; object-fit: cover; border-radius: 4px; border: 1px solid var(--border); background: #000; }
+
+    .modal-overlay {
+        display: none; position: fixed; inset: 0; background: rgba(20,28,36,0.6);
+        align-items: center; justify-content: center; z-index: 50; padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+        background: var(--panel); border-radius: 14px; max-width: 720px; width: 100%;
+        max-height: 86vh; overflow-y: auto; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    }
+    .modal-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 14px 18px; border-bottom: 1px solid var(--border); position: sticky; top: 0; background: var(--panel);
+    }
+    .modal-header h3 { font-family: 'Archivo', sans-serif; font-size: 16px; font-weight: 700; }
+    .modal-close { background: none; border: none; color: var(--ink-soft); font-size: 24px; cursor: pointer; }
+    .modal-body { padding: 18px; }
+    .detail-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .detail-item { background: var(--gray-bg); border-radius: 10px; padding: 10px 12px; }
+    .detail-item .dl { font-size: 11px; color: var(--ink-muted); text-transform: uppercase; font-weight: 700; }
+    .detail-item .dv { font-family: 'IBM Plex Mono', monospace; font-size: 16px; font-weight: 600; margin-top: 2px; }
+    .modal-images { display: flex; gap: 8px; flex-wrap: wrap; }
+    .modal-images img { width: 130px; height: 130px; object-fit: cover; border-radius: 8px; border: 1px solid var(--border); background: #000; }
+
+    footer.note {
+        margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--border);
+        font-size: 12.5px; color: var(--ink-muted); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+    }
+
+    @media (max-width: 980px) {
+        .kpis { grid-template-columns: repeat(2, 1fr); }
+        .grid-2 { grid-template-columns: 1fr; }
+        .drill { grid-template-columns: 1fr; }
+    }
+</style>
+</head>
+<body>
+<div id="app-nav"></div>
+
+<main>
+    <section class="section">
+        <div class="section-head">
+            <h2>Overview</h2>
+            <div class="section-controls">
+                <div class="segmented" id="rangeSeg">
+                    <button data-range="7" class="active">7 days</button>
+                    <button data-range="14">14 days</button>
+                    <button data-range="30">30 days</button>
+                </div>
+                <span class="desc" id="overviewRangeLabel">Last 7 days &middot; all operators</span>
+            </div>
+        </div>
+        <div class="kpis" id="kpiRow"></div>
+    </section>
+
+    <section class="section">
+        <div class="grid-2">
+            <div class="panel">
+                <div class="section-head" style="margin-bottom:0;">
+                    <div>
+                        <h3>Inspections per day</h3>
+                        <div class="panel-sub">Springs inspected, split by result</div>
+                    </div>
+                    <button class="table-toggle" data-toggle="dayTable" data-chart="dayChart">View as table</button>
+                </div>
+                <div class="legend">
+                    <span class="legend-item good"><span class="legend-swatch"></span>Not defective</span>
+                    <span class="legend-item critical"><span class="legend-swatch"></span>Defective</span>
+                </div>
+                <div id="dayChart"></div>
+                <table class="chart-table" id="dayTable">
+                    <thead><tr><th>Date</th><th class="num">Total</th><th class="num">Not defective</th><th class="num">Defective</th><th class="num">Defect rate</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+
+            <div class="panel">
+                <div class="section-head" style="margin-bottom:0;">
+                    <div>
+                        <h3>By operator</h3>
+                        <div class="panel-sub">Ranked by volume, selected range</div>
+                    </div>
+                    <button class="table-toggle" data-toggle="opTable" data-chart="opChart">View as table</button>
+                </div>
+                <div class="legend">
+                    <span class="legend-item good"><span class="legend-swatch"></span>Not defective</span>
+                    <span class="legend-item critical"><span class="legend-swatch"></span>Defective</span>
+                </div>
+                <div id="opChart"></div>
+                <table class="chart-table" id="opTable">
+                    <thead><tr><th>Operator</th><th class="num">Total</th><th class="num">Not defective</th><th class="num">Defective</th><th class="num">Defect rate</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-head">
+            <h2>Operator detail</h2>
+            <span class="desc">Pick an operator for their own trend and recent inspections</span>
+        </div>
+        <div class="op-pills" id="opPills"></div>
+        <div class="panel" id="drillPanel">
+            <div class="drill">
+                <div><div class="drill-stats" id="drillStats"></div></div>
+                <div class="sparkwrap">
+                    <div class="sp-head"><span class="t">Daily volume</span></div>
+                    <div id="sparkChart"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="section-head">
+            <h2>Recent inspections</h2>
+            <div class="section-controls">
+                <select id="recentOperatorSelect" class="recent-op-select">
+                    <option value="all">All operators</option>
+                </select>
+                <div class="date-filter">
+                    <input type="date" id="recentDatePick">
+                    <button class="ghost-btn" id="recentDateClear" style="display:none;">✕ Clear date</button>
+                </div>
+                <button class="export-btn" id="openExport">Export Excel</button>
+            </div>
+        </div>
+        <div class="table-wrap">
+            <table class="records">
+                <thead>
+                    <tr>
+                        <th>S.No</th><th>Spring No</th><th>Operator</th><th>Source</th>
+                        <th>IN</th><th>OUT</th><th class="num">Duration</th>
+                        <th>Result</th><th>Images</th><th>Decided</th>
+                    </tr>
+                </thead>
+                <tbody id="records-body"></tbody>
+            </table>
+            <div class="empty" id="records-empty" style="display:none;">No inspections recorded yet.</div>
+        </div>
+    </section>
+
+    <footer class="note">
+        <span>Live figures from the inspections database.</span>
+        <span class="mono" id="lastRefreshed"></span>
+    </footer>
+</main>
+
+<div class="modal-overlay" id="detail-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3 id="detail-title">Spring Detail</h3>
+            <button class="modal-close" onclick="closeDetail()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="detail-grid" id="detail-grid"></div>
+            <div class="modal-images" id="detail-images"></div>
+        </div>
+    </div>
+</div>
+
+<div class="modal-overlay" id="export-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3>Export inspections to Excel</h3>
+            <button class="modal-close" id="exportClose">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="xform">
+                <div class="xrow">
+                    <label class="lbl" for="xOperator">Operator</label>
+                    <select id="xOperator"><option value="all">All operators</option></select>
+                </div>
+                <div class="xrow">
+                    <label class="lbl">Period</label>
+                    <div class="xradio" id="xPeriod">
+                        <label><input type="radio" name="xperiod" value="7" checked> Last 7 days</label>
+                        <label><input type="radio" name="xperiod" value="14"> Last 14 days</label>
+                        <label><input type="radio" name="xperiod" value="30"> Last 30 days</label>
+                        <label><input type="radio" name="xperiod" value="all"> All time</label>
+                        <label><input type="radio" name="xperiod" value="date"> Specific date</label>
+                    </div>
+                    <input type="date" id="xDate" style="display:none;">
+                </div>
+                <div class="xrow">
+                    <label class="lbl" for="xResult">Result</label>
+                    <select id="xResult">
+                        <option value="all">All results</option>
+                        <option value="ok">Not defective only</option>
+                        <option value="defective">Defective only</option>
+                        <option value="unknown">Unknown / skipped only</option>
+                    </select>
+                </div>
+                <div class="xrow">
+                    <label class="xcheck"><input type="checkbox" id="xImages" checked> Embed inspection images</label>
+                    <div class="xrow" id="xImagesPerWrap" style="margin-top:8px;">
+                        <label class="lbl" for="xPerRow">Images per inspection</label>
+                        <input type="number" id="xPerRow" min="1" max="6" value="3" style="max-width:90px;">
+                        <span class="xnote">More images = larger file and slower export.</span>
+                    </div>
+                </div>
+                <div class="xnote" id="xHint">Exports up to 5,000 inspections, newest first.</div>
+                <div class="xactions">
+                    <button class="cancel" id="xCancel">Cancel</button>
+                    <button class="go" id="xGo">Export</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script src="/static/nav.js"></script>
+<script>
+(function () {
+"use strict";
+
+/* ================= state ================= */
+// range/scope drive Overview (KPIs, both charts, drill-down). recentDate is
+// independent - it only scopes the Recent Inspections table, per its own
+// date picker, and its own operator dropdown (separate from the "Operator
+// detail" pills above, which drive scope for the Overview/drill-down).
+var state = { range: 7, scope: 'all', recentDate: null, recentOperator: 'all' };
+var LAST_OPERATORS = [];
+var RECORDS_BY_ID = new Map();
+
+function svgns(tag) { return document.createElementNS('http://www.w3.org/2000/svg', tag); }
+function sum(arr, fn) { return arr.reduce(function (a, x) { return a + fn(x); }, 0); }
+function pctVal(part, total) { return total ? (part / total) * 100 : 0; }
+function fmtPct(p) { return p.toFixed(1) + '%'; }
+function fmt(v) { return (v === null || v === undefined) ? '-' : Number(v).toFixed(2); }
+
+// Real IN/OUT wall-clock times. in_time_sec / out_time_sec are offsets from
+// the job start (started_at); older rows saved before started_at was recorded
+// fall back to anchoring on decided_at (operator decides right after OUT).
+function clockPair(r) {
+    var st = r.started_at ? Date.parse(r.started_at) : null;
+    if (st !== null && r.in_time_sec != null) {
+        var out = r.out_time_sec != null ? r.out_time_sec : r.in_time_sec;
+        return { in: new Date(st + r.in_time_sec * 1000), out: new Date(st + out * 1000) };
+    }
+    if (r.decided_at && r.duration_sec != null) {
+        var d = Date.parse(r.decided_at);
+        return { in: new Date(d - r.duration_sec * 1000), out: new Date(d) };
+    }
+    return { in: null, out: r.decided_at ? new Date(r.decided_at) : null };
+}
+function fmtTime(dt) { return dt ? dt.toLocaleTimeString() : '-'; }
+function fmtMins(sec) {
+    if (sec == null || isNaN(sec)) return '-';
+    var m = Math.floor(sec / 60), s = Math.round(sec % 60);
+    if (s === 60) { m += 1; s = 0; }
+    return m + ':' + String(s).padStart(2, '0');
+}
+function sourceKind(r) { return r.source_type === 'rtsp' ? 'RTSP' : 'Test video'; }
+function dateKey(dt) { return dt.toISOString().slice(0, 10); }
+function fmtDay(dt) { return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }); }
+function fmtDateStr(s) { return new Date(s + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }); }
+
+// Pick a whole-number tick step (1/2/5 x a power of ten) so the axis reads
+// as a real ruler - every gridline's label matches an integer value, and
+// that same integer is what its y-position is computed from (no rounding
+// drift between the two, which is what made "3" sit at the height for 2.5).
+function niceTickStep(maxVal, targetTicks) {
+    if (maxVal <= 0) return 1;
+    var rawStep = maxVal / targetTicks;
+    var mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+    var norm = rawStep / mag;
+    var step = norm <= 1 ? 1 : (norm <= 2 ? 2 : (norm <= 5 ? 5 : 10));
+    return Math.max(1, Math.round(step * mag)); // counts are integers - never a fractional step
+}
+
+/* ================= tooltip ================= */
+var tipEl = document.getElementById('tooltip');
+function showTip(x, y, html) {
+    tipEl.innerHTML = html;
+    tipEl.style.left = x + 'px';
+    tipEl.style.top = y + 'px';
+    tipEl.classList.add('show');
+}
+function hideTip() { tipEl.classList.remove('show'); }
+
+/* ================= data fetch helpers ================= */
+function dayRange(days) {
+    var out = [];
+    var today = new Date();
+    for (var i = days - 1; i >= 0; i--) {
+        var dt = new Date(today);
+        dt.setDate(dt.getDate() - i);
+        out.push(dt);
+    }
+    return out;
+}
+
+function fillDaily(rawRows, days) {
+    var byKey = {};
+    rawRows.forEach(function (r) { byKey[r.day] = r; });
+    return dayRange(days).map(function (dt) {
+        var k = dateKey(dt);
+        var r = byKey[k];
+        return {
+            date: dt,
+            total: r ? r.total : 0,
+            ok: r ? r.ok : 0,
+            defective: r ? r.defective : 0,
+        };
+    });
+}
+
+async function fetchDaily(operator, days) {
+    var qs = 'days=' + days + (operator && operator !== 'all' ? '&operator=' + encodeURIComponent(operator) : '');
+    var raw = await fetch('/reports/daily?' + qs).then(function (r) { return r.json(); }).catch(function () { return []; });
+    return fillDaily(raw, days);
+}
+
+async function fetchSummary(operator, days) {
+    var qs = 'days=' + days + (operator && operator !== 'all' ? '&operator=' + encodeURIComponent(operator) : '');
+    return fetch('/reports/summary?' + qs).then(function (r) { return r.json(); }).catch(function () { return { total: 0, ok: 0, defective: 0, unknown: 0 }; });
+}
+
+async function fetchOperatorsSummary(days) {
+    return fetch('/reports/operators-summary?days=' + days).then(function (r) { return r.json(); }).catch(function () { return []; });
+}
+
+// Recent Inspections is independent of the Overview range - by default it's
+// simply the latest N rows overall; picking a date in that section scopes it
+// to exactly that day instead.
+async function fetchRecords(operator, limit, date) {
+    var qs = 'limit=' + (limit || 300) + (date ? '&date=' + date : '') +
+        (operator && operator !== 'all' ? '&operator=' + encodeURIComponent(operator) : '');
+    return fetch('/reports/records?' + qs).then(function (r) { return r.json(); }).catch(function () { return []; });
+}
+
+/* ================= KPI row ================= */
+async function renderKpis() {
+    var scope = state.scope;
+    var days = state.range;
+    var daily = await fetchDaily(scope, days * 2); // current + prior window in one call
+    var curRows = daily.slice(days);
+    var prevRows = daily.slice(0, days);
+    var total = sum(curRows, function (r) { return r.total; });
+    var ok = sum(curRows, function (r) { return r.ok; });
+    var defective = sum(curRows, function (r) { return r.defective; });
+    var prevTotal = sum(prevRows, function (r) { return r.total; });
+    var prevDefective = sum(prevRows, function (r) { return r.defective; });
+    var priorLabel = 'vs prior ' + days + 'd';
+
+    var rate = pctVal(defective, total);
+    var prevRate = prevTotal ? pctVal(prevDefective, prevTotal) : null;
+
+    function deltaHtml(curV, prevV, invert) {
+        if (prevV === null || !prevTotal) return '<span class="delta"><span class="base">no prior-period data</span></span>';
+        var diff = curV - prevV;
+        var up = invert ? diff < 0 : diff > 0;
+        var cls = diff === 0 ? '' : (up ? 'up' : 'down');
+        var arrow = diff === 0 ? '&#8212;' : (diff > 0 ? '&#8593;' : '&#8595;');
+        var pctChange = prevV !== 0 ? Math.abs(diff / prevV * 100) : 0;
+        return '<span class="delta ' + cls + '">' + arrow + ' ' + pctChange.toFixed(1) + '% <span class="base">' + priorLabel + '</span></span>';
+    }
+
+    var tiles = [
+        { label: 'Total inspected', value: total.toLocaleString(), delta: deltaHtml(total, prevTotal || null, false) },
+        { label: 'Not defective', value: ok.toLocaleString(), delta: '<span class="delta"><span class="base">' + fmtPct(pctVal(ok, total)) + ' of total</span></span>' },
+        { label: 'Defective', value: defective.toLocaleString(), delta: deltaHtml(defective, prevTotal ? prevDefective : null, true) },
+        { label: 'Defect rate', value: fmtPct(rate), delta: deltaHtml(rate, prevRate, true) },
+    ];
+
+    document.getElementById('kpiRow').innerHTML = tiles.map(function (t) {
+        return '<div class="kpi"><div class="label">' + t.label + '</div><div class="value num">' + t.value + '</div>' + t.delta + '</div>';
+    }).join('');
+
+    document.getElementById('overviewRangeLabel').textContent =
+        'Last ' + days + ' days' + (scope === 'all' ? ' · all operators' : ' · ' + scope);
+}
+
+/* ================= day-wise stacked bar chart ================= */
+async function renderDayChart() {
+    var host = document.getElementById('dayChart');
+    var tbody = document.querySelector('#dayTable tbody');
+
+    var days = state.range;
+    var data = await fetchDaily(state.scope, days);
+
+    var grandTotal = sum(data, function (r) { return r.total; });
+    if (grandTotal === 0) {
+        host.innerHTML = '<div class="chart-empty">No inspections recorded in this range yet.</div>';
+        tbody.innerHTML = '';
+        return;
+    }
+
+    var W = 720, H = 240, padL = 34, padR = 10, padT = 10, padB = 26;
+    var innerW = W - padL - padR, innerH = H - padT - padB;
+    var maxTotal = Math.max.apply(null, data.map(function (r) { return r.total; })) || 1;
+    var tickStep = niceTickStep(maxTotal, 4);
+    var niceMax = Math.ceil(maxTotal / tickStep) * tickStep;
+    var gap = days > 20 ? 3 : 6;
+    var bw = (innerW / data.length) - gap;
+
+    var svg = svgns('svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('class', 'chart-svg');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Inspections per day, not defective versus defective');
+
+    for (var val = 0; val <= niceMax; val += tickStep) {
+        var y = padT + innerH - (val / niceMax) * innerH;
+        var gl = svgns('line');
+        gl.setAttribute('x1', padL); gl.setAttribute('x2', W - padR);
+        gl.setAttribute('y1', y); gl.setAttribute('y2', y);
+        gl.setAttribute('class', 'gridline');
+        svg.appendChild(gl);
+        var lab = svgns('text');
+        lab.setAttribute('x', padL - 8); lab.setAttribute('y', y + 3.5);
+        lab.setAttribute('text-anchor', 'end'); lab.setAttribute('class', 'axis-label');
+        lab.textContent = val;
+        svg.appendChild(lab);
+    }
+
+    var labelEvery = Math.ceil(data.length / (days > 20 ? 8 : 14));
+
+    data.forEach(function (r, i) {
+        var x = padL + i * (bw + gap);
+        var okH = (r.ok / niceMax) * innerH;
+        var defH = (r.defective / niceMax) * innerH;
+        var yBase = padT + innerH;
+
+        if (r.ok > 0) {
+            var okRect = svgns('rect');
+            okRect.setAttribute('x', x); okRect.setAttribute('width', Math.max(bw, 1));
+            okRect.setAttribute('y', yBase - okH); okRect.setAttribute('height', Math.max(okH - (defH > 0 ? 1 : 0), 0));
+            okRect.setAttribute('rx', Math.min(3, bw / 2));
+            okRect.setAttribute('class', 'bar-ok');
+            svg.appendChild(okRect);
+        }
+        if (r.defective > 0) {
+            var defRect = svgns('rect');
+            defRect.setAttribute('x', x); defRect.setAttribute('width', Math.max(bw, 1));
+            defRect.setAttribute('y', yBase - okH - defH); defRect.setAttribute('height', Math.max(defH - (okH > 0 ? 1 : 0), 0));
+            defRect.setAttribute('rx', Math.min(3, bw / 2));
+            defRect.setAttribute('class', 'bar-critical');
+            svg.appendChild(defRect);
+        }
+
+        var hit = svgns('rect');
+        hit.setAttribute('x', x - gap / 2); hit.setAttribute('width', bw + gap);
+        hit.setAttribute('y', padT); hit.setAttribute('height', innerH);
+        hit.setAttribute('class', 'bar-hit');
+        hit.addEventListener('mousemove', function (ev) {
+            showTip(ev.clientX, ev.clientY - 10,
+                '<div style="font-weight:700;margin-bottom:4px;">' + fmtDay(r.date) + '</div>' +
+                '<div class="row"><span class="k">Total</span><b>' + r.total + '</b></div>' +
+                '<div class="row"><span class="k">Not defective</span><b>' + r.ok + '</b></div>' +
+                '<div class="row"><span class="k">Defective</span><b>' + r.defective + '</b></div>' +
+                '<div class="row"><span class="k">Defect rate</span><b>' + fmtPct(pctVal(r.defective, r.total)) + '</b></div>');
+        });
+        hit.addEventListener('mouseleave', hideTip);
+        svg.appendChild(hit);
+
+        if (i % labelEvery === 0 || i === data.length - 1) {
+            var xlab = svgns('text');
+            xlab.setAttribute('x', x + bw / 2); xlab.setAttribute('y', H - 6);
+            xlab.setAttribute('text-anchor', 'middle'); xlab.setAttribute('class', 'axis-label');
+            xlab.textContent = fmtDay(r.date);
+            svg.appendChild(xlab);
+        }
+    });
+
+    host.innerHTML = '';
+    host.appendChild(svg);
+
+    tbody.innerHTML = data.map(function (r) {
+        return '<tr><td>' + fmtDay(r.date) + '</td><td class="num">' + r.total + '</td><td class="num">' + r.ok +
+            '</td><td class="num">' + r.defective + '</td><td class="num">' + fmtPct(pctVal(r.defective, r.total)) + '</td></tr>';
+    }).join('');
+}
+
+/* ================= per-operator ranked bar chart ================= */
+async function renderOpChart() {
+    var raw = await fetchOperatorsSummary(state.range);
+    var data = raw.map(function (r) {
+        return { name: r.operator || '(unassigned)', ok: r.ok || 0, defective: r.defective || 0, total: r.total || 0 };
+    }).sort(function (a, b) { return b.total - a.total; });
+
+    var host = document.getElementById('opChart');
+    var tbody = document.querySelector('#opTable tbody');
+
+    if (!data.length) {
+        host.innerHTML = '<div class="chart-empty">No inspections recorded in this range yet.</div>';
+        tbody.innerHTML = '';
+        return;
+    }
+
+    var maxTotal = Math.max.apply(null, data.map(function (r) { return r.total; })) || 1;
+    var W = 520, rowH = 40, padL = 96, padR = 46, padT = 6;
+    var H = padT * 2 + rowH * data.length;
+    var innerW = W - padL - padR;
+
+    var svg = svgns('svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('class', 'chart-svg');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Total inspections by operator, not defective versus defective');
+
+    data.forEach(function (r, i) {
+        var y = padT + i * rowH;
+        var barY = y + rowH / 2 - 8;
+        var okW = (r.ok / maxTotal) * innerW;
+        var defW = (r.defective / maxTotal) * innerW;
+
+        var name = svgns('text');
+        name.setAttribute('x', padL - 12); name.setAttribute('y', y + rowH / 2 + 1.5);
+        name.setAttribute('text-anchor', 'end');
+        name.setAttribute('style', "font:600 12.5px 'IBM Plex Sans',sans-serif; fill: var(--ink);");
+        name.textContent = r.name;
+        svg.appendChild(name);
+
+        var track = svgns('rect');
+        track.setAttribute('x', padL); track.setAttribute('y', barY);
+        track.setAttribute('width', innerW); track.setAttribute('height', 16);
+        track.setAttribute('rx', 4);
+        track.setAttribute('fill', 'var(--grid)');
+        svg.appendChild(track);
+
+        if (r.ok > 0) {
+            var okRect = svgns('rect');
+            okRect.setAttribute('x', padL); okRect.setAttribute('y', barY);
+            okRect.setAttribute('width', Math.max(okW - (defW > 0 ? 1 : 0), 0)); okRect.setAttribute('height', 16);
+            okRect.setAttribute('rx', 4);
+            okRect.setAttribute('class', 'bar-ok');
+            svg.appendChild(okRect);
+        }
+        if (r.defective > 0) {
+            var defRect = svgns('rect');
+            defRect.setAttribute('x', padL + okW + (okW > 0 ? 1 : 0)); defRect.setAttribute('y', barY);
+            defRect.setAttribute('width', Math.max(defW - (okW > 0 ? 1 : 0), 0)); defRect.setAttribute('height', 16);
+            defRect.setAttribute('rx', 4);
+            defRect.setAttribute('class', 'bar-critical');
+            svg.appendChild(defRect);
+        }
+
+        var total = svgns('text');
+        total.setAttribute('x', padL + Math.max(okW + defW, 0) + 8); total.setAttribute('y', y + rowH / 2 + 1.5);
+        total.setAttribute('style', "font:600 12px 'IBM Plex Mono',monospace; fill: var(--ink-soft);");
+        total.textContent = r.total;
+        svg.appendChild(total);
+
+        var hit = svgns('rect');
+        hit.setAttribute('x', 0); hit.setAttribute('y', y);
+        hit.setAttribute('width', W); hit.setAttribute('height', rowH);
+        hit.setAttribute('class', 'bar-hit');
+        hit.addEventListener('mousemove', function (ev) {
+            showTip(ev.clientX, ev.clientY - 10,
+                '<div style="font-weight:700;margin-bottom:4px;">' + r.name + '</div>' +
+                '<div class="row"><span class="k">Total</span><b>' + r.total + '</b></div>' +
+                '<div class="row"><span class="k">Not defective</span><b>' + r.ok + '</b></div>' +
+                '<div class="row"><span class="k">Defective</span><b>' + r.defective + '</b></div>' +
+                '<div class="row"><span class="k">Defect rate</span><b>' + fmtPct(pctVal(r.defective, r.total)) + '</b></div>');
+        });
+        hit.addEventListener('mouseleave', hideTip);
+        if (r.name !== '(unassigned)') {
+            hit.addEventListener('click', function () { setScope(r.name); });
+        }
+        svg.appendChild(hit);
+    });
+
+    host.innerHTML = '';
+    host.appendChild(svg);
+
+    tbody.innerHTML = data.map(function (r) {
+        return '<tr><td>' + r.name + '</td><td class="num">' + r.total + '</td><td class="num">' + r.ok +
+            '</td><td class="num">' + r.defective + '</td><td class="num">' + fmtPct(pctVal(r.defective, r.total)) + '</td></tr>';
+    }).join('');
+}
+
+/* ================= operator pills ================= */
+function renderPills() {
+    var wrap = document.getElementById('opPills');
+    var allChip = '<button class="chip' + (state.scope === 'all' ? ' active' : '') + '" data-op="all"><span class="dot"></span>All operators</button>';
+    var chips = LAST_OPERATORS.map(function (op) {
+        var active = state.scope === op.name;
+        return '<button class="chip' + (active ? ' active' : '') + '" data-op="' + op.name + '"><span class="dot"></span>' + op.name +
+            (op.machine_no ? '<span class="mn">' + op.machine_no + '</span>' : '') + '</button>';
+    }).join('');
+    wrap.innerHTML = allChip + chips;
+    wrap.querySelectorAll('.chip').forEach(function (btn) {
+        btn.addEventListener('click', function () { setScope(btn.getAttribute('data-op')); });
+    });
+}
+
+function setScope(name) {
+    state.scope = name;
+    renderAll();
+}
+
+/* ================= drill-down ================= */
+async function renderDrill() {
+    var days = state.range;
+    var focusName = state.scope === 'all' ? (LAST_OPERATORS[0] ? LAST_OPERATORS[0].name : null) : state.scope;
+    var panel = document.getElementById('drillPanel');
+
+    if (!focusName) {
+        panel.innerHTML = '<div class="chart-empty">No operators configured yet — add one from the Admin dashboard.</div>';
+        return;
+    }
+    panel.innerHTML = '<div class="drill"><div><div class="drill-stats" id="drillStats"></div></div>' +
+        '<div class="sparkwrap"><div class="sp-head"><span class="t">Daily volume</span></div><div id="sparkChart"></div></div></div>';
+
+    var op = LAST_OPERATORS.filter(function (o) { return o.name === focusName; })[0];
+    var rows = await fetchDaily(focusName, days);
+    var summary = await fetchSummary(focusName, days);
+    var total = summary.total || 0, ok = summary.ok || 0, defective = summary.defective || 0;
+    var rate = pctVal(defective, total);
+
+    var stats = document.getElementById('drillStats');
+    stats.innerHTML = [
+        { l: 'Operator', v: focusName, c: '' },
+        { l: 'Total inspected', v: total.toLocaleString(), c: '' },
+        { l: 'Not defective', v: ok.toLocaleString(), c: 'good' },
+        { l: 'Defective', v: defective.toLocaleString(), c: 'critical' },
+        { l: 'Defect rate', v: total ? fmtPct(rate) : '—', c: rate > 8 ? 'critical' : 'good' },
+        { l: 'Machine', v: (op && op.machine_no) || '—', c: '' },
+    ].map(function (t) {
+        return '<div class="stat-tile"><div class="l">' + t.l + '</div><div class="v ' + t.c + '">' + t.v + '</div></div>';
+    }).join('');
+
+    var host = document.getElementById('sparkChart');
+    var vals = rows.map(function (r) { return r.total; });
+    var grandTotal = sum(rows, function (r) { return r.total; });
+    if (grandTotal === 0) {
+        host.innerHTML = '<div class="chart-empty" style="padding:24px 0;">No inspections in this range yet.</div>';
+        return;
+    }
+
+    var W = 420, H = 120, padL = 8, padR = 8, padT = 10, padB = 10;
+    var innerW = W - padL - padR, innerH = H - padT - padB;
+    var maxV = Math.max.apply(null, vals) || 1;
+    var minV = Math.min.apply(null, vals);
+    var span = Math.max(maxV - minV, 1);
+
+    function ptX(i) { return padL + (i / (vals.length - 1 || 1)) * innerW; }
+    function ptY(v) { return padT + innerH - ((v - minV) / span) * innerH; }
+
+    var svg = svgns('svg');
+    svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
+    svg.setAttribute('class', 'chart-svg');
+    svg.setAttribute('role', 'img');
+    svg.setAttribute('aria-label', 'Daily inspection volume trend for ' + focusName);
+
+    for (var gy = 0; gy <= 2; gy++) {
+        var yy = padT + (innerH / 2) * gy;
+        var gl = svgns('line');
+        gl.setAttribute('x1', padL); gl.setAttribute('x2', W - padR);
+        gl.setAttribute('y1', yy); gl.setAttribute('y2', yy);
+        gl.setAttribute('class', 'gridline');
+        svg.appendChild(gl);
+    }
+
+    var areaPts = vals.map(function (v, i) { return ptX(i) + ',' + ptY(v); }).join(' L ');
+    var area = svgns('path');
+    area.setAttribute('d', 'M ' + ptX(0) + ',' + (padT + innerH) + ' L ' + areaPts + ' L ' + ptX(vals.length - 1) + ',' + (padT + innerH) + ' Z');
+    area.setAttribute('fill', 'var(--blue)');
+    area.setAttribute('opacity', '0.10');
+    svg.appendChild(area);
+
+    var line = svgns('path');
+    line.setAttribute('d', 'M ' + areaPts);
+    line.setAttribute('fill', 'none');
+    line.setAttribute('stroke', 'var(--blue)');
+    line.setAttribute('stroke-width', '2');
+    line.setAttribute('stroke-linejoin', 'round');
+    line.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(line);
+
+    vals.forEach(function (v, i) {
+        var hit = svgns('circle');
+        hit.setAttribute('cx', ptX(i)); hit.setAttribute('cy', ptY(v)); hit.setAttribute('r', 8);
+        hit.setAttribute('fill', 'transparent');
+        hit.addEventListener('mousemove', function (ev) {
+            showTip(ev.clientX, ev.clientY - 10,
+                '<div style="font-weight:700;margin-bottom:4px;">' + fmtDay(rows[i].date) + '</div>' +
+                '<div class="row"><span class="k">Total</span><b>' + rows[i].total + '</b></div>' +
+                '<div class="row"><span class="k">Defective</span><b>' + rows[i].defective + '</b></div>');
+        });
+        hit.addEventListener('mouseleave', hideTip);
+        svg.appendChild(hit);
+    });
+
+    var lastX = ptX(vals.length - 1), lastY = ptY(vals[vals.length - 1]);
+    var ring = svgns('circle');
+    ring.setAttribute('cx', lastX); ring.setAttribute('cy', lastY); ring.setAttribute('r', 5);
+    ring.setAttribute('fill', 'var(--panel-2)'); ring.setAttribute('stroke', 'var(--blue)'); ring.setAttribute('stroke-width', '2.5');
+    svg.appendChild(ring);
+
+    host.innerHTML = '';
+    host.appendChild(svg);
+}
+
+/* ================= recent inspections table ================= */
+function renderRecentOperatorOptions() {
+    var sel = document.getElementById('recentOperatorSelect');
+    var prev = sel.value || state.recentOperator;
+    sel.innerHTML = '<option value="all">All operators</option>' + LAST_OPERATORS.map(function (op) {
+        return '<option value="' + op.name + '">' + op.name + (op.machine_no ? ' — ' + op.machine_no : '') + '</option>';
+    }).join('');
+    if ([].slice.call(sel.options).some(function (o) { return o.value === prev; })) sel.value = prev;
+    state.recentOperator = sel.value;
+}
+
+async function renderRecent() {
+    var rows = await fetchRecords(state.recentOperator, 12, state.recentDate);
+    RECORDS_BY_ID = new Map(rows.map(function (r) { return [r.id, r]; }));
+
+    // Order the table by IN time and give each row a running S.No; the spring's
+    // own tracker id shows separately as "Spring No".
+    rows.forEach(function (r) { r._clock = clockPair(r); });
+    rows.sort(function (a, b) {
+        var av = a._clock.in ? a._clock.in.getTime() : Date.parse(a.decided_at || 0);
+        var bv = b._clock.in ? b._clock.in.getTime() : Date.parse(b.decided_at || 0);
+        return av - bv;
+    });
+    // S.No follows IN-time order (1 = earliest); display newest-first.
+    rows.forEach(function (r, i) { r._seq = i + 1; });
+    rows.reverse();
+
+    var body = document.getElementById('records-body');
+    var empty = document.getElementById('records-empty');
+    body.innerHTML = '';
+    empty.style.display = rows.length ? 'none' : '';
+    rows.forEach(function (r, idx) {
+        var tr = document.createElement('tr');
+        tr.onclick = function () { openDetail(r.id); };
+        var pillClass = r.defect === 'defective' ? 'defective' : (r.defect === 'ok' ? 'ok' : 'unknown');
+        var pillText = r.defect === 'defective' ? '✕ Defective' : (r.defect === 'ok' ? '✓ Not defective' : 'Unknown');
+        var thumbs = [];
+        var n = Math.min(r.image_count || 0, 3);
+        for (var i = 1; i <= n; i++) thumbs.push('<img src="/defect-image/' + r.job_id + '/' + r.s_no + '/' + i + '" loading="lazy">');
+        tr.innerHTML =
+            '<td class="mono num">' + r._seq + '</td>' +
+            '<td class="mono num">#' + r.s_no + '</td>' +
+            '<td>' + (r.operator || '(unassigned)') + '</td>' +
+            '<td>' + sourceKind(r) + '</td>' +
+            '<td class="mono">' + fmtTime(r._clock.in) + '</td>' +
+            '<td class="mono">' + fmtTime(r._clock.out) + '</td>' +
+            '<td class="num mono">' + fmtMins(r.duration_sec) + '</td>' +
+            '<td><span class="pill ' + pillClass + '">' + pillText + '</span></td>' +
+            '<td><div class="thumb-row">' + thumbs.join('') + '</div></td>' +
+            '<td class="mono">' + (r.decided_at ? new Date(r.decided_at).toLocaleString() : '-') + '</td>';
+        body.appendChild(tr);
+    });
+}
+
+function openDetail(id) {
+    var r = RECORDS_BY_ID.get(id);
+    if (!r) return;
+    var pillClass = r.defect === 'defective' ? 'defective' : (r.defect === 'ok' ? 'ok' : 'unknown');
+    var pillText = r.defect === 'defective' ? 'DEFECTIVE' : (r.defect === 'ok' ? 'NOT DEFECTIVE' : 'UNKNOWN');
+    var clock = clockPair(r);
+    document.getElementById('detail-title').textContent = 'Spring No #' + r.s_no + ' — ' + (r.operator || 'unassigned');
+    document.getElementById('detail-grid').innerHTML =
+        '<div class="detail-item"><div class="dl">Result</div><div class="dv"><span class="pill ' + pillClass + '">' + pillText + '</span></div></div>' +
+        '<div class="detail-item"><div class="dl">IN</div><div class="dv" style="font-size:13px;">' + (clock.in ? clock.in.toLocaleString() : '-') + '</div></div>' +
+        '<div class="detail-item"><div class="dl">OUT</div><div class="dv" style="font-size:13px;">' + (clock.out ? clock.out.toLocaleString() : '-') + '</div></div>' +
+        '<div class="detail-item"><div class="dl">Duration</div><div class="dv">' + fmtMins(r.duration_sec) + ' min</div></div>' +
+        '<div class="detail-item"><div class="dl">Source</div><div class="dv">' + sourceKind(r) + '</div></div>' +
+        '<div class="detail-item"><div class="dl">' + (r.source_type === 'rtsp' ? 'Camera (RTSP)' : 'Test video') + '</div><div class="dv" style="font-size:12px;word-break:break-all;">' + (r.source_label || '-') + '</div></div>' +
+        '<div class="detail-item"><div class="dl">Decided At</div><div class="dv" style="font-size:13px;">' + (r.decided_at ? new Date(r.decided_at).toLocaleString() : '-') + '</div></div>';
+    var imgsEl = document.getElementById('detail-images');
+    imgsEl.innerHTML = '';
+    var n = r.image_count || 0;
+    for (var i = 1; i <= n; i++) {
+        var img = document.createElement('img');
+        img.src = '/defect-image/' + r.job_id + '/' + r.s_no + '/' + i;
+        imgsEl.appendChild(img);
+    }
+    document.getElementById('detail-modal').classList.add('open');
+}
+function closeDetail() { document.getElementById('detail-modal').classList.remove('open'); }
+
+/* ================= range control (Overview) ================= */
+document.getElementById('rangeSeg').addEventListener('click', function (ev) {
+    var btn = ev.target.closest('button[data-range]');
+    if (!btn) return;
+    state.range = parseInt(btn.getAttribute('data-range'), 10);
+    document.querySelectorAll('#rangeSeg button').forEach(function (b) { b.classList.toggle('active', b === btn); });
+    renderAll();
+});
+
+/* ================= date filter (Recent Inspections only) ================= */
+var recentDatePickEl = document.getElementById('recentDatePick');
+recentDatePickEl.max = dateKey(new Date());
+
+recentDatePickEl.addEventListener('change', function () {
+    state.recentDate = recentDatePickEl.value || null;
+    document.getElementById('recentDateClear').style.display = state.recentDate ? '' : 'none';
+    renderRecent();
+});
+
+document.getElementById('recentDateClear').addEventListener('click', function () {
+    state.recentDate = null;
+    recentDatePickEl.value = '';
+    this.style.display = 'none';
+    renderRecent();
+});
+
+document.getElementById('recentOperatorSelect').addEventListener('change', function () {
+    state.recentOperator = this.value;
+    renderRecent();
+});
+
+/* ================= table toggles ================= */
+document.querySelectorAll('.table-toggle').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var target = document.getElementById(btn.getAttribute('data-toggle'));
+        var chartHost = document.getElementById(btn.getAttribute('data-chart'));
+        var showing = target.classList.toggle('show');
+        chartHost.style.display = showing ? 'none' : '';
+        btn.textContent = showing ? 'View as chart' : 'View as table';
+    });
+});
+
+/* ================= render all ================= */
+async function loadOperators() {
+    try { LAST_OPERATORS = await (await fetch('/operators')).json(); } catch (e) { LAST_OPERATORS = []; }
+}
+
+async function renderAll() {
+    renderPills();
+    renderRecentOperatorOptions();
+    renderExportOperatorOptions();
+    await Promise.all([renderKpis(), renderDayChart(), renderOpChart(), renderDrill(), renderRecent()]);
+    document.getElementById('lastRefreshed').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+/* ================= Excel export ================= */
+function renderExportOperatorOptions() {
+    var sel = document.getElementById('xOperator');
+    var prev = sel.value;
+    sel.innerHTML = '<option value="all">All operators</option>' + LAST_OPERATORS.map(function (op) {
+        return '<option value="' + op.name + '">' + op.name + (op.machine_no ? ' — ' + op.machine_no : '') + '</option>';
+    }).join('');
+    if ([].slice.call(sel.options).some(function (o) { return o.value === prev; })) sel.value = prev;
+}
+
+(function initExport() {
+    var modal = document.getElementById('export-modal');
+    var open = function () {
+        renderExportOperatorOptions();
+        // seed from whatever the Recent Inspections controls currently show
+        var recOp = document.getElementById('recentOperatorSelect').value;
+        if ([].slice.call(document.getElementById('xOperator').options).some(function (o) { return o.value === recOp; })) {
+            document.getElementById('xOperator').value = recOp;
+        }
+        var recDate = document.getElementById('recentDatePick').value;
+        if (recDate) {
+            document.querySelector('input[name="xperiod"][value="date"]').checked = true;
+            document.getElementById('xDate').value = recDate;
+        }
+        syncPeriod();
+        modal.classList.add('open');
+    };
+    var close = function () { modal.classList.remove('open'); };
+
+    function syncPeriod() {
+        var v = (document.querySelector('input[name="xperiod"]:checked') || {}).value;
+        document.getElementById('xDate').style.display = v === 'date' ? '' : 'none';
+    }
+    function syncImages() {
+        document.getElementById('xImagesPerWrap').style.display =
+            document.getElementById('xImages').checked ? '' : 'none';
+    }
+
+    document.getElementById('openExport').addEventListener('click', open);
+    document.getElementById('exportClose').addEventListener('click', close);
+    document.getElementById('xCancel').addEventListener('click', close);
+    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+    document.getElementById('xPeriod').addEventListener('change', syncPeriod);
+    document.getElementById('xImages').addEventListener('change', syncImages);
+    syncImages();
+
+    document.getElementById('xGo').addEventListener('click', function () {
+        var btn = this;
+        var params = new URLSearchParams();
+        var op = document.getElementById('xOperator').value;
+        if (op && op !== 'all') params.set('operator', op);
+
+        var period = (document.querySelector('input[name="xperiod"]:checked') || {}).value;
+        if (period === 'date') {
+            var d = document.getElementById('xDate').value;
+            if (!d) { alert('Pick a date first.'); return; }
+            params.set('date', d);
+        } else if (period !== 'all') {
+            params.set('days', period);
+        }
+
+        var res = document.getElementById('xResult').value;
+        if (res && res !== 'all') params.set('defect', res);
+
+        var withImgs = document.getElementById('xImages').checked;
+        params.set('include_images', withImgs ? 'true' : 'false');
+        if (withImgs) {
+            var per = parseInt(document.getElementById('xPerRow').value, 10) || 3;
+            params.set('images_per_row', Math.max(1, Math.min(per, 6)));
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Preparing…';
+        var url = '/reports/export.xlsx?' + params.toString();
+        // Fetch as a blob so we can show progress state and surface errors,
+        // rather than a bare navigation that leaves the button stuck.
+        fetch(url).then(function (r) {
+            if (!r.ok) return r.text().then(function (t) { throw new Error(t || r.statusText); });
+            var name = 'spring-qc.xlsx';
+            var cd = r.headers.get('Content-Disposition') || '';
+            var m = cd.match(/filename="?([^"]+)"?/);
+            if (m) name = m[1];
+            return r.blob().then(function (b) { return { b: b, name: name }; });
+        }).then(function (o) {
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(o.b);
+            a.download = o.name;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+            close();
+        }).catch(function (e) {
+            alert('Export failed: ' + e.message);
+        }).finally(function () {
+            btn.disabled = false;
+            btn.textContent = 'Export';
+        });
+    });
+})();
+
+(async function init() {
+    await loadOperators();
+    await renderAll();
+    setInterval(async function () { await loadOperators(); renderAll(); }, 10000);
+})();
+
+// Inline onclick="..." attributes (the detail modal's close button) resolve
+// in global scope, not this IIFE's closure - expose what they need.
+window.closeDetail = closeDetail;
+window.openDetail = openDetail;
+
+})();
+</script>
+</body>
+</html>
