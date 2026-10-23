@@ -15,7 +15,7 @@ REM  this script creates its own from scratch (same as the server build).
 REM ============================================================================
 
 REM ---- edit these if needed --------------------------------------------------
-set BUILD_DRIVE=E:
+set BUILD_DRIVE=C:
 set SHARED_VENV=%BUILD_DRIVE%\SpringQC-Build\venv
 set BUILD_ROOT=%BUILD_DRIVE%\SpringQC-Build-Desktop
 set TORCH_INDEX=https://download.pytorch.org/whl/cu124
@@ -60,16 +60,16 @@ echo.
 
 if not exist "%VENV_DIR%\Lib\site-packages\torch" (
     echo.
-    echo --- Installing CUDA PyTorch (this is the multi-GB download) ---
+    echo --- Installing CUDA PyTorch - this is the multi-GB download ---
     pip install --index-url %TORCH_INDEX% torch torchvision || exit /b 1
 
     echo.
-    echo --- Installing the app's own requirements (unmodified) ---
+    echo --- Installing the app's own requirements - unmodified ---
     pip install -r "%SCRIPT_DIR%..\..\spring-qc-app\requirements.txt" || exit /b 1
 )
 
 echo.
-echo --- Installing Desktop's own requirements (tray icon support etc.) ---
+echo --- Installing Desktop's own requirements - tray icon support etc. ---
 pip install -r "%SCRIPT_DIR%requirements.txt" || exit /b 1
 
 if not exist "%SCRIPT_DIR%..\server\vendor\postgres\bin\pg_ctl.exe" (
